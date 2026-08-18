@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DX Core 4: симулятор метрик</title>
+<style>
+:root{
+  --ground:#F5F6F9; --surface:#FFFFFF; --surface-2:#FAFBFC;
+  --line:#E0E3EA; --line-strong:#C9CED8;
+  --ink:#161A21; --ink-muted:#5B6472; --ink-faint:#8A93A3;
+  --pos:#12876C; --neg:#C03B33; --accent:#4453B8; --zero:#9AA3B0;
+  --accent-soft:rgba(68,83,184,.13);
+  --ok-bg:#EAF4F0; --ok-line:#A8CFC2; --ok-ink:#0D6B55;
+  --warn-bg:#FDF4E7; --warn-line:#E3C48E; --warn-ink:#8A5B12;
+  --bad-bg:#FBECEB; --bad-line:#E0AFAB; --bad-ink:#993029;
+  --off-bg:#F0F1F5; --off-line:#D3D7E0; --off-ink:#6A7385;
+  --shadow:0 1px 2px rgba(22,26,33,.05), 0 8px 24px -16px rgba(22,26,33,.28);
+  --r:10px;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131619; --surface:#1B1F26; --surface-2:#20242C;
+    --line:#2C323B; --line-strong:#3B424E;
+    --ink:#E7EAF0; --ink-muted:#98A2B2; --ink-faint:#6C7686;
+    --pos:#3AA98C; --neg:#C8564C; --accent:#6E7DD2; --zero:#6C7686;
+    --accent-soft:rgba(110,125,210,.20);
+    --ok-bg:#16281F; --ok-line:#2F5445; --ok-ink:#67C3A5;
+    --warn-bg:#2A2317; --warn-line:#5C4A28; --warn-ink:#D8B476;
+    --bad-bg:#2B1A18; --bad-line:#5A3230; --bad-ink:#E08C84;
+    --off-bg:#23272F; --off-line:#39404B; --off-ink:#8A94A5;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131619; --surface:#1B1F26; --surface-2:#20242C;
+  --line:#2C323B; --line-strong:#3B424E;
+  --ink:#E7EAF0; --ink-muted:#98A2B2; --ink-faint:#6C7686;
+  --pos:#3AA98C; --neg:#C8564C; --accent:#6E7DD2; --zero:#6C7686;
+  --accent-soft:rgba(110,125,210,.20);
+  --ok-bg:#16281F; --ok-line:#2F5445; --ok-ink:#67C3A5;
+  --warn-bg:#2A2317; --warn-line:#5C4A28; --warn-ink:#D8B476;
+  --bad-bg:#2B1A18; --bad-line:#5A3230; --bad-ink:#E08C84;
+  --off-bg:#23272F; --off-line:#39404B; --off-ink:#8A94A5;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.wrap{max-width:1240px; margin:0 auto; padding:0 20px 72px}
+
+.masthead{padding:32px 0 16px}
+.eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin:0 0 8px}
+.masthead h1{margin:0 0 6px; font-size:clamp(24px,3.4vw,34px); line-height:1.12; letter-spacing:-.02em; font-weight:680; text-wrap:balance}
+.masthead p{margin:0; color:var(--ink-muted); max-width:74ch; font-size:14.5px}
+
+.controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 0 18px; border-bottom:1px solid var(--line)}
+.controls .lbl,.basebar .lbl{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; margin-right:4px}
+.chipbtn{font:inherit; font-size:12.5px; color:var(--ink-muted); background:var(--surface);
+  border:1px solid var(--line); border-radius:99px; padding:5px 12px; cursor:pointer; transition:border-color .12s,color .12s}
+.chipbtn:hover{border-color:var(--accent); color:var(--accent)}
+.basebar{display:flex; gap:8px; align-items:center; margin:0 0 12px}
+:where(button,input,a):focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+
+.readout{position:sticky; top:0; z-index:20; background:var(--ground); border-bottom:1px solid var(--line); padding:14px 0 12px; margin-bottom:24px}
+.readout-grid{position:relative; display:grid; grid-template-columns:1.5fr repeat(4,1fr); gap:10px}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; display:flex; flex-direction:column; gap:2px; min-width:0}
+.tile.hero{border-color:var(--line-strong)}
+.tile .t-lab{font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-faint); font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.tile .t-val{font-size:26px; font-weight:640; line-height:1.15}
+.tile.hero .t-val{font-size:38px}
+.tile .t-sub{font-size:11.5px; color:var(--ink-faint)}
+.alt-line{margin:10px 0 0; font-size:12.5px; color:var(--ink-muted)}
+.alt-line strong{color:var(--ink); font-weight:640}
+.t-how summary{font-size:11px; color:var(--ink-faint); cursor:pointer; user-select:none; width:max-content; margin-top:3px}
+.t-how summary:hover,.t-how[open] summary{color:var(--accent)}
+.t-how .pop{position:absolute; left:0; right:0; top:calc(100% + 8px); z-index:40; background:var(--surface); border:1px solid var(--line-strong); border-radius:8px; padding:10px 14px; font-size:12.5px; line-height:1.5; color:var(--ink-muted); box-shadow:var(--shadow)}
+.pos{color:var(--pos)} .neg{color:var(--neg)} .zeroc{color:var(--ink-muted)}
+
+.cols{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:24px; align-items:start}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 18px 20px}
+.panel > h2{margin:0 0 4px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:650}
+.panel > .hint{margin:0 0 16px; font-size:13px; color:var(--ink-muted)}
+
+.group{margin-top:20px}
+.group:first-of-type{margin-top:0}
+.group-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+.group-name{font-size:13px; font-weight:660}
+.group-count{font-size:11px; color:var(--ink-faint); font-weight:500; margin-left:6px}
+.group-dev{font-size:13px; font-weight:640}
+.metric{padding:13px 0; border-bottom:1px solid var(--line)}
+.metric:last-child{border-bottom:0; padding-bottom:2px}
+.metric.off .m-name{color:var(--ink-muted)}
+.m-top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:3px}
+.m-name{font-size:13.5px; font-weight:560}
+.m-dir{font-size:11px; color:var(--ink-faint); font-weight:500; white-space:nowrap}
+.m-val{font-size:14px; font-weight:620; white-space:nowrap}
+.m-unit{font-size:11.5px; color:var(--ink-faint); font-weight:500; margin-left:3px}
+.track-wrap{position:relative; padding-top:4px}
+.etalon-tick{position:absolute; top:9px; width:2px; height:16px; background:var(--zero); border-radius:1px; pointer-events:none; transform:translateX(-1px); opacity:.75}
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:20px; background:transparent; cursor:pointer; margin:0; display:block}
+input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:var(--line-strong)}
+input[type=range]::-moz-range-track{height:4px; border-radius:2px; background:var(--line-strong)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%; background:var(--accent); border:2px solid var(--surface); margin-top:-5.5px; box-shadow:0 0 0 1px var(--accent)}
+input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; background:var(--accent); border:2px solid var(--surface); box-shadow:0 0 0 1px var(--accent)}
+.metric.off input[type=range]::-webkit-slider-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
+.metric.off input[type=range]::-moz-range-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
+.m-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:5px; min-height:20px; flex-wrap:wrap}
+.m-etalon{font-size:11.5px; color:var(--ink-faint)}
+.m-contrib{font-size:12.5px; font-weight:620; white-space:nowrap}
+.m-mirror{font-size:11.5px; color:var(--ink-muted); margin-top:3px}
+.m-how{margin-top:5px}
+.m-how summary{font-size:11.5px; color:var(--ink-faint); cursor:pointer; user-select:none; width:max-content}
+.m-how summary:hover,.m-how[open] summary{color:var(--accent)}
+.m-how p{font-size:12px; color:var(--ink-muted); margin:3px 0 0; max-width:60ch}
+.pill{display:inline-flex; align-items:center; font-size:11px; font-weight:620; border-radius:99px; padding:2px 9px; border:1px solid; white-space:nowrap}
+.pill.ok{background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line)}
+.pill.warn{background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-line)}
+.pill.bad{background:var(--bad-bg); color:var(--bad-ink); border-color:var(--bad-line)}
+.pill.off{background:var(--off-bg); color:var(--off-ink); border-color:var(--off-line)}
+.pill.tiny{font-size:10px; padding:1px 7px}
+
+.legend{display:flex; gap:16px; align-items:center; margin:0 0 14px; font-size:12px; color:var(--ink-muted); flex-wrap:wrap}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.sw{width:11px; height:11px; border-radius:3px; display:inline-block}
+.chart-row{display:grid; grid-template-columns:158px minmax(0,1fr) 64px; gap:10px; align-items:center; padding:5px 0}
+.chart-row .cr-lab{font-size:12.5px; color:var(--ink-muted); text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.chart-row.dimrow .cr-lab{color:var(--ink); font-weight:650}
+.chart-row.offrow{opacity:.55}
+.chart-row.offrow .cr-lab::after{content:" · 0%"; color:var(--ink-faint)}
+.bartrack{position:relative; height:22px; border-radius:4px; background:var(--surface-2)}
+.bartrack::before{content:""; position:absolute; left:50%; top:-1px; bottom:-1px; width:1px; background:var(--line-strong)}
+.bar{position:absolute; top:5px; height:12px}
+.bar.p{left:50%; background:var(--pos); border-radius:2px 4px 4px 2px; margin-left:2px}
+.bar.n{right:50%; background:var(--neg); border-radius:4px 2px 2px 4px; margin-right:2px}
+.chart-row .cr-val{font-size:12.5px; font-weight:620; text-align:right}
+.chart-sep{height:1px; background:var(--line); margin:9px 0}
+.axis-note{display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); margin-top:8px; padding-left:168px}
+
+.dxi-block{display:grid; grid-template-columns:minmax(0,1fr); gap:24px; margin-top:24px; align-items:start; max-width:720px}
+.roi-block{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; margin-top:24px; align-items:start}
+.rparam{padding:10px 0; border-bottom:1px solid var(--line)}
+.rparam:last-of-type{border-bottom:0}
+.rp-top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:2px}
+.rp-lab{font-size:13px; font-weight:540}
+.rp-val{font-size:13.5px; font-weight:640; white-space:nowrap}
+.roi-out{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-top:14px; padding-top:12px; border-top:2px solid var(--line-strong)}
+.roi-out .ro-lab{font-size:13px; font-weight:650}
+.roi-out .ro-val{font-size:24px; font-weight:660}
+.guard-toggle{display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12.5px; color:var(--ink-muted); cursor:pointer}
+.guard-toggle input{margin:2px 0 0; accent-color:var(--accent); cursor:pointer}
+.rparam.inactive .rp-lab,.rparam.inactive .rp-val{color:var(--ink-faint)}
+.rparam.inactive input[type=range]::-webkit-slider-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
+.rparam.inactive input[type=range]::-moz-range-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
+.formula{font-family:var(--mono); font-size:12.5px; line-height:1.8; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; white-space:pre}
+.note{font-size:12.5px; color:var(--ink-muted); margin:12px 0 0}
+.note strong{color:var(--ink); font-weight:640}
+.tw{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13px}
+th,td{padding:7px 9px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+th{font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint); font-weight:650}
+td.n,th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
+tbody tr.dimhead td{background:var(--surface-2); font-weight:650; font-size:12px; color:var(--ink-muted)}
+tbody tr.offrow td{color:var(--ink-faint)}
+tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bottom:0}
+.qrow{display:grid; grid-template-columns:minmax(0,1fr) 168px 40px; gap:10px; align-items:center; padding:4px 0; font-size:12.5px}
+.qrow .q-lab{color:var(--ink-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.qtrack{position:relative; height:14px; border-radius:3px; background:var(--surface-2)}
+.qtrack i{position:absolute; left:0; top:3px; height:8px; border-radius:2px; background:var(--accent)}
+.qtrack u{position:absolute; top:-2px; width:1px; height:18px; background:var(--line-strong); text-decoration:none}
+.qrow .q-val{text-align:right; font-weight:620}
+.qrow.hi .q-lab,.qrow.hi .q-val{color:var(--pos)}
+.qrow.lo .q-lab,.qrow.lo .q-val{color:var(--neg)}
+.qrow.hi .qtrack i{background:var(--pos)}
+.qrow.lo .qtrack i{background:var(--neg)}
+
+@media (max-width:1020px){
+  .cols,.dxi-block,.roi-block{grid-template-columns:minmax(0,1fr)}
+  .readout-grid{grid-template-columns:repeat(2,1fr)}
+  .tile.hero{grid-column:1 / -1}
+  .readout{position:static}
+}
+@media (max-width:560px){
+  .chart-row{grid-template-columns:112px minmax(0,1fr) 56px}
+  .axis-note{padding-left:122px}
+  .qrow{grid-template-columns:minmax(0,1fr) 90px 38px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">симулятор · DX Core 4</p>
+  <h1>DX Core 4: как входные метрики складываются в индекс</h1>
+  <p>Интерактивная модель сводного индекса продуктивности, собранная по реальному дашборду DX Core 4. Здесь можно проверить, как устроена верхняя цифра: какие метрики входят в индекс и с каким весом, как сильно каждый ползунок двигает сводные плитки и какие сценарии поднимают показатели без изменения реальной работы.</p>
+</header>
+
+<div class="controls">
+  <span class="lbl">Сценарии</span>
+  <button type="button" class="chipbtn" data-preset="reset">Сбросить</button>
+  <button type="button" class="chipbtn" data-preset="better10">Всё лучше на 10%</button>
+  <button type="button" class="chipbtn" data-preset="worse10">Всё хуже на 10%</button>
+  <button type="button" class="chipbtn" data-preset="deploy2x">Релизим вдвое чаще</button>
+  <button type="button" class="chipbtn" data-preset="dxielite">DXI до Elite</button>
+  <button type="button" class="chipbtn" data-preset="roiplus">ROI вышел в плюс</button>
+  <button type="button" class="chipbtn" data-preset="cfrzero">Ни одного отказа</button>
+  <button type="button" class="chipbtn" data-preset="epicsplit">Нарезали задачи мельче</button>
+</div>
+
+<section class="readout" aria-label="Сводные индексы">
+  <div class="readout-grid">
+    <div class="tile hero">
+      <span class="t-lab">Общая продуктивность</span>
+      <span class="t-val num" id="v-overall">0,0%</span>
+      <span class="t-sub">среднее четырёх измерений, относительно базовых значений</span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее четырёх измерений: Скорость, Эффективность, Качество, Влияние. Каждое измерение это среднее отклонений своих индексных метрик, отклонение считается от базы: ±(текущее − база) / |база| × 100, знак задаёт направление метрики («меньше лучше» или «больше лучше»). Вес метрики: 1 / (число индексных метрик измерения) / 4, поэтому DXI и ROI весят по 25% общей цифры, а Cycle Time только 6,25%.</div></details>
+    </div>
+    <div class="tile"><span class="t-lab">Скорость</span><span class="t-val num" id="v-speed">0,0%</span><span class="t-sub" id="s-speed"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Cycle Time, Deployment Frequency, Delivery Time и Throughput. Все четыре в индексе, каждая весит четверть измерения, то есть 6,25% общей цифры.</div></details></div>
+    <div class="tile"><span class="t-lab">Эффективность</span><span class="t-val num" id="v-effect">0,0%</span><span class="t-sub" id="s-effect"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Из четырёх метрик раздела в индексе только DXI: плитка равна его отклонению, вес 25% общей цифры. Flow State Frequency, Cognitive Load Index и Context Switching Rate показаны серым и на индекс не влияют.</div></details></div>
+    <div class="tile"><span class="t-lab">Качество</span><span class="t-val num" id="v-quality">0,0%</span><span class="t-sub" id="s-quality"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Change Failure Rate, MTTR и Bug Escape Rate, каждая весит 8,33% общей цифры. Technical Debt Ratio в индекс не входит: направление метрики не задано.</div></details></div>
+    <div class="tile"><span class="t-lab">Влияние</span><span class="t-val num" id="v-impact">0,0%</span><span class="t-sub" id="s-impact"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Из трёх метрик раздела в индексе только ROI: плитка равна его отклонению, вес 25% общей цифры. Feature Delivery Rate и Innovation Time в индекс не входят.</div></details></div>
+  </div>
+  <p class="alt-line" id="alt-line"></p>
+</section>
+
+<div class="basebar">
+  <span class="lbl">База</span>
+  <button type="button" class="chipbtn" id="setbase">Установить как базовые значения</button>
+</div>
+
+<div class="cols">
+  <section class="panel">
+    <h2>Входные метрики дашборда</h2>
+    <p class="hint">Серая засечка на дорожке это базовое значение. Кнопка «Установить как базовые значения» делает базой текущие позиции ползунков, и сценарии отсчитываются от неё. Справа от ползунка отклонение метрики от базы. Метрики с меткой «не входит в индекс» на сводные плитки не влияют.</p>
+    <div id="groups"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Отклонение от базы</h2>
+    <p class="hint">Влево хуже, вправо лучше. Жирные строки это измерения, под ними их метрики. Бледные строки в измерение не входят.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--pos)"></i>лучше базы</span>
+      <span><i class="sw" style="background:var(--neg)"></i>хуже базы</span>
+      <span><i class="sw" style="background:var(--zero);width:2px;height:12px;border-radius:1px"></i>база</span>
+    </div>
+    <div id="chart"></div>
+    <div class="axis-note"><span>хуже</span><span>база</span><span>лучше</span></div>
+  </section>
+</div>
+
+<div class="dxi-block">
+  <section class="panel">
+    <h2>Из чего складывается DXI</h2>
+    <p class="hint">Средние по 14 вопросам одной волны опроса, шкала 1–10. Профиль статичен: он объясняет, из чего собран балл, а не как он менялся.</p>
+    <div id="qlist"></div>
+    <p class="note"><strong>Сравнение с мировым бенчмарком.</strong> Мировой бенчмарк DXI это 6,8–7,2. Среднее нашей волны 7,73 выше бенчмарка: категория High, здоровая организация. Шкала категорий: от 8,0 Elite (топ-10% компаний), 7,0–8,0 High (здоровая организация), 6,0–7,0 Medium (зона риска), ниже 6,0 Low (критическая ситуация).</p>
+  </section>
+</div>
+
+<div class="roi-block">
+  <section class="panel">
+    <h2>ROI: что им на самом деле управляет</h2>
+    <p class="hint">Формула дашборда, разложенная до входных величин. Двигайте параметры: ползунок ROI наверху идёт следом, и наоборот. Тумблер защиты подставляет в формулу объём поставки вместо числа эпиков, и нарезка перестаёт влиять на ROI.</p>
+    <div id="rparams"></div>
+    <label class="guard-toggle"><input type="checkbox" id="roi-guard"><span>Формула с защитой от нарезки: вместо числа эпиков объём поставки (число × средний размер эпика)</span></label>
+    <div class="roi-out">
+      <span class="ro-lab" id="ro-lab">ROI по формуле дашборда</span>
+      <span class="ro-val num" id="roi-out">−0,4918</span>
+    </div>
+    <p class="note"><strong>Как читать.</strong> Параметры заданы в отношениях к прошлому кварталу, потому что после сокращения формулы абсолютные рубли из неё уходят. Значения по умолчанию подобраны так, чтобы воспроизвести базовое значение −0,4918.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Что из этого следует</h2>
+    <p class="hint">Формула дашборда сокращается до четырёх величин, и денег среди них нет.</p>
+    <div class="formula">invest    = tech_epics × ФОТ / total_epics
+saving    = prod_epics × (стоимость_эпика₀ − стоимость_эпика)
+ROI       = (saving − invest₀) / invest₀
+
+после сокращения:
+ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀
+
+d, d₀ = доля техдолговых эпиков сейчас и в прошлом квартале
+T/T₀  = во сколько раз изменилось число закрытых эпиков
+r     = во сколько раз изменился ФОТ
+
+с защитой от нарезки:
+ROI = ((1 − d) × (T/T₀ × s − r) − d₀) / d₀
+
+s     = во сколько раз изменился средний размер эпика:
+        при нарезке T растёт, s падает, T × s стоит на месте</div>
+    <div class="tw" style="margin-top:14px">
+      <table>
+        <thead><tr><th>Что делает команда</th><th>Что делает ROI</th></tr></thead>
+        <tbody>
+          <tr><td>Ничего не изменилось: те же эпики, тот же ФОТ</td><td class="neg">ровно −100%</td></tr>
+          <tr><td>Нарезала те же задачи на вдвое большее число эпиков</td><td class="pos">резко вверх</td></tr>
+          <tr><td>Вложила в техдолг больше <em>в прошлом</em> квартале</td><td class="neg">вниз</td></tr>
+          <tr><td>Вкладывает в техдолг больше <em>сейчас</em></td><td class="neg">вниз</td></tr>
+          <tr><td>Наняла людей, ФОТ вырос</td><td class="neg">вниз</td></tr>
+          <tr><td>Реально ускорила поставку без роста числа эпиков</td><td class="zeroc">не меняется</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note"><strong>Главное.</strong> Метрика продаётся как отдача от вложений в технический долг, но устроена так, что штрафует и за прошлые вложения (они в знаменателе), и за текущие (множитель 1&nbsp;−&nbsp;d). Самый быстрый способ поднять ROI это перестать заниматься техдолгом и нарезать те же задачи на большее число эпиков. Тумблер «защита от нарезки» показывает починку: формула считает объём поставки, и дробление перестаёт работать. Throughput и Feature Delivery Rate этой защитой не закрыты: они по-прежнему считают штуки.</p>
+    <p class="note"><strong>Две разные доли техдолга.</strong> Внутри ROI доля считается по количеству эпиков, а плитка Technical Debt Ratio в разделе «Качество» считает долю по сумме delivery time. Это две разные величины с одним названием, поэтому связать их напрямую нельзя, пока не выбрана одна база.</p>
+  </section>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ---------- модель ----------
+   inIndex: входит ли метрика в сводную плитку своего измерения.
+   dir: +1 больше лучше, −1 меньше лучше, 0 направление на дашборде не задано.  */
+const METRICS = [
+  {k:"cycle",   dim:"speed",   inIndex:true,  name:"Cycle Time",           unit:"ч",              etalon:94.5167, min:40,  max:180, step:0.5,  dir:-1, dp:1,
+   desc:"медиана по задачам: время от перехода задачи в статус In Progress до Closed, то есть от взятия в работу до закрытия"},
+  {k:"deploy",  dim:"speed",   inIndex:true,  name:"Deployment Frequency", unit:"релизов/день",   etalon:9.1304,  min:1,   max:30,  step:0.1,  dir:1,  dp:2,
+   desc:"число релизов всех сервисов за период, делённое на число дней периода"},
+  {k:"delivery",dim:"speed",   inIndex:true,  name:"Delivery Time",        unit:"дней",           etalon:15.9767, min:5,   max:45,  step:0.1,  dir:-1, dp:2,
+   desc:"медиана по эпикам: время от входа эпика в статус In Technical Design до Rolling out, то есть весь путь от начала технической проработки до раскатки"},
+  {k:"through", dim:"speed",   inIndex:true,  name:"Throughput",           unit:"задач/чел/мес",  etalon:10.9031, min:2,   max:30,  step:0.1,  dir:1,  dp:2,
+   desc:"закрытые за месяц задачи, делённые на число уникальных исполнителей"},
+
+  {k:"dxiRaw",  dim:"effect",  inIndex:true,  name:"DXI",                  unit:"балл из 10",     etalon:7.7337,  min:4,   max:10,  step:0.01, dir:1,  dp:2,
+   desc:"среднее по 14 числовым вопросам опроса разработчиков, каждый вопрос по шкале от 1 до 10; состав вопросов в панели «Из чего складывается DXI»", scale:"dxi"},
+  {k:"flow",    dim:"effect",  inIndex:false, name:"Flow State Frequency", unit:"балл",           etalon:5.3086,  min:1,   max:10,  step:0.05, dir:1,  dp:2,
+   desc:"балл из опроса; единица измерения на дашборде не определена: то ли процент времени, то ли частота, то ли балл", flagUnit:true, oneWave:true},
+  {k:"cli",     dim:"effect",  inIndex:false, name:"Cognitive Load Index", unit:"балл",           etalon:6.3992,  min:1,   max:10,  step:0.05, dir:-1, dp:2,
+   desc:"балл из опроса; состав вопросов и шкала на дашборде не описаны, внешнего ориентира нет", flagUnit:true, oneWave:true},
+  {k:"csr",     dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", etalon:1.6433, min:0.5, max:5, step:0.01, dir:-1, dp:3,
+   desc:"число переключений на человека в день; переключением считается перевод задачи в активный статус, поэтому значение растёт с длиной workflow"},
+
+  {k:"cfr",     dim:"quality", inIndex:true,  name:"Change Failure Rate",  unit:"%",              etalon:1.4484,  min:0,   max:12,  step:0.05, dir:-1, dp:2,
+   desc:"доля релизов с резолюцией Failed среди всех релизов за период; на дашборде плитка показывает долю успешных релизов, здесь взята честная обратная величина; по шкале DORA до 5% это Elite", scale:"cfr", mirror:"успешных релизов"},
+  {k:"mttr",    dim:"quality", inIndex:true,  name:"MTTR",                 unit:"минут",          etalon:76,      min:10,  max:300, step:1,    dir:-1, dp:0,
+   desc:"MTTR (mean time to recovery), общее время устранения инцидента. Время реакции = дата создания задачи в Jira − фактическое время возникновения инцидента; время решения = фактическое время решения − дата создания задачи. MTTR = median(время реакции + время решения) по инцидентам скользящего окна; если инцидентов в окне не было, MTTR = 0. Инциденты с отрицательным временем реакции или решения учитываются, поэтому MTTR может быть меньше нуля"},
+  {k:"ber",     dim:"quality", inIndex:true,  name:"Bug Escape Rate",      unit:"баг/1000 строк", etalon:0.9119,  min:0.1, max:3,   step:0.01, dir:-1, dp:3,
+   desc:"баги за период, делённые на тысячи добавленных строк кода; числитель и знаменатель напрямую не связаны: баг может прийти из кода, написанного раньше"},
+  {k:"tdr",     dim:"quality", inIndex:false, name:"Technical Debt Ratio", unit:"%",              etalon:42.5163, min:0,   max:100, step:0.1,  dir:0,  dp:2,
+   desc:"доля суммарного delivery time, приходящаяся на технические эпики; направление в индексе не задано"},
+
+  {k:"roi",     dim:"impact",  inIndex:true,  name:"ROI",                  unit:"доля",           etalon:-0.4918, min:-1.5,max:1.5, step:0.01, dir:1,  dp:4,
+   desc:"отдача от вложений в техдолг по формуле дашборда: вложения это доля ФОТ, ушедшая на технические эпики, экономия это число продуктовых эпиков, умноженное на удешевление среднего эпика, ROI = (экономия − вложения прошлого квартала) / вложения прошлого квартала. Раскладка по параметрам в панели «ROI: что им на самом деле управляет». Базовое значение отрицательное (−0,4918), поэтому отклонение нормируется на модуль базы"},
+  {k:"fdr",     dim:"impact",  inIndex:false, name:"Feature Delivery Rate",unit:"эпиков/мес",     etalon:83.3333, min:20,  max:160, step:0.5,  dir:1,  dp:1,
+   desc:"закрытые продуктовые (нетехнические) эпики в месяц, без нормировки на размер эпика"},
+  {k:"inno",    dim:"impact",  inIndex:false, name:"Innovation Time",      unit:"%",              etalon:57.4837, min:0,   max:100, step:0.1,  dir:1,  dp:2,
+   desc:"доля времени на продуктовые (нетехнические) эпики; по построению это в точности 100 минус Technical Debt Ratio", twin:"tdr"}
+];
+
+const DIMS = [
+  {k:"speed",   name:"Скорость"},
+  {k:"effect",  name:"Эффективность"},
+  {k:"quality", name:"Качество"},
+  {k:"impact",  name:"Влияние"}
+];
+
+const M = Object.fromEntries(METRICS.map(m => [m.k, m]));
+for (const d of DIMS){
+  d.all  = METRICS.filter(m => m.dim === d.k).map(m => m.k);
+  d.comp = METRICS.filter(m => m.dim === d.k && m.inIndex).map(m => m.k);
+}
+const DIM = Object.fromEntries(DIMS.map(d => [d.k, d]));
+const state = Object.fromEntries(METRICS.map(m => [m.k, m.etalon]));
+
+/* отклонение: dir × (текущее − эталон) / |эталон| × 100
+   Защита стоит только на эталоне. Ноль в самой метрике это законное значение
+   (Change Failure Rate = 0 означает ни одного отказа, то есть +100% к эталону),
+   а не признак отсутствия данных. */
+function dev(k){
+  const m = M[k], x = state[k];
+  if (m.dir === 0) return NaN;          // направление не задано, отклонение не определено
+  if (m.etalon === 0) return NaN;      // нулевая база: относительное отклонение не определено, в плитке н/д
+  return m.dir * (x - m.etalon) / Math.abs(m.etalon) * 100;
+}
+
+function mean(list){
+  const v = list.filter(Number.isFinite);
+  return v.length ? v.reduce((a,b) => a + b, 0) / v.length : NaN;
+}
+
+function compute(){
+  const c = Object.fromEntries(METRICS.map(m => [m.k, dev(m.k)]));
+  const d = {}, alt = {};
+  for (const dim of DIMS){
+    d[dim.k]   = mean(dim.comp.map(k => c[k]));                      // как считает дашборд
+    alt[dim.k] = mean(dim.all.map(k => c[k]));                       // если бы считали все метрики раздела
+  }
+  d.overall   = mean(DIMS.map(x => d[x.k]));
+  alt.overall = mean(DIMS.map(x => alt[x.k]));
+  return {comp:c, dim:d, alt};
+}
+
+/* ---------- форматирование ---------- */
+const ru = (v, dp) => Number.isFinite(v)
+  ? v.toLocaleString("ru-RU", {minimumFractionDigits:dp, maximumFractionDigits:dp}) : "н/д";
+function pct(v, dp){
+  if (!Number.isFinite(v)) return "н/д";
+  const d = dp === undefined ? (Math.abs(v) >= 1000 ? 0 : 1) : dp;
+  return (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), d) + "%";
+}
+const cls = v => !Number.isFinite(v) ? "zeroc" : v > 0.05 ? "pos" : v < -0.05 ? "neg" : "zeroc";
+
+/* статус-шкалы: отдельная семантика, не путать с цветом отклонения */
+function statusOf(k){
+  const x = state[k];
+  if (k === "dxiRaw"){
+    if (x >= 8)   return ["ok",   "Elite, топ-10% компаний"];
+    if (x >= 7)   return ["ok",   "High, здоровая организация"];
+    if (x >= 6)   return ["warn", "Medium, зона риска"];
+    return ["bad", "Low, критическая ситуация"];
+  }
+  if (k === "cfr"){
+    if (x <= 5)   return ["ok",   "DORA Elite, до 5%"];
+    if (x <= 10)  return ["warn", "DORA High, до 10%"];
+    if (x <= 15)  return ["warn", "DORA Medium, до 15%"];
+    return ["bad", "DORA Low, выше 15%"];
+  }
+  return null;
+}
+
+/* ---------- построение ползунков ---------- */
+const groupsEl = document.getElementById("groups");
+for (const dim of DIMS){
+  const g = document.createElement("div");
+  g.className = "group";
+  g.innerHTML = `<div class="group-head">
+      <span class="group-name">${dim.name}<span class="group-count">${dim.comp.length} из ${dim.all.length} в индексе</span></span>
+      <span class="group-dev num" id="gd-${dim.k}">+0,0%</span>
+    </div>`;
+  for (const k of dim.all){
+    const m = M[k];
+    const el = document.createElement("div");
+    el.className = "metric" + (m.inIndex ? "" : " off");
+    el.title = m.desc;
+    const dirText = m.dir === 1 ? "больше лучше" : m.dir === -1 ? "меньше лучше" : "направление не задано";
+    const badges = [];
+    if (!m.inIndex) badges.push(`<span class="pill off tiny">не входит в индекс</span>`);
+    if (m.oneWave)  badges.push(`<span class="pill off tiny">одна волна опроса</span>`);
+    if (m.flagUnit) badges.push(`<span class="pill off tiny">единица не определена</span>`);
+    if (m.twin)     badges.push(`<span class="pill off tiny">= 100 − ${M[m.twin].name}</span>`);
+    el.innerHTML = `
+      <div class="m-top">
+        <span class="m-name">${m.name} <span class="m-dir">${dirText}</span></span>
+        <span class="m-val num" id="mv-${k}"></span>
+      </div>
+      <div class="track-wrap">
+        <span class="etalon-tick" id="tick-${k}"></span>
+        <input type="range" id="in-${k}" min="${m.min}" max="${m.max}" step="${m.step}" aria-label="${m.name}, ${m.unit}">
+      </div>
+      ${m.mirror ? `<div class="m-mirror" id="mm-${k}"></div>` : ""}
+      <div class="m-foot">
+        <span class="m-etalon">база <span class="num" id="me-${k}">${ru(m.etalon, m.dp)}</span> ${m.unit} ${badges.join(" ")}${m.scale ? ` <span id="st-${k}"></span>` : ""}</span>
+        <span class="m-contrib num" id="mc-${k}"></span>
+      </div>
+      <details class="m-how"><summary>как считается</summary><p>${m.desc}</p></details>`;
+    g.appendChild(el);
+  }
+  groupsEl.appendChild(g);
+}
+
+for (const m of METRICS){
+  const inp = document.getElementById("in-" + m.k);
+  inp.value = state[m.k];
+  inp.addEventListener("input", e => {
+    state[m.k] = parseFloat(e.target.value);
+    if (m.k === "tdr")  syncSlider("inno", 100 - state.tdr);
+    if (m.k === "inno") syncSlider("tdr",  100 - state.inno);
+    render();
+  });
+  const p = (m.etalon - m.min) / (m.max - m.min) * 100;
+  document.getElementById("tick-" + m.k).style.left = Math.max(0, Math.min(100, p)) + "%";
+}
+function syncSlider(k, v){
+  state[k] = clamp(M[k], v);
+  document.getElementById("in-" + k).value = state[k];
+}
+
+/* ---------- ROI: разложение формулы дашборда ----------
+   invest    = tech_epics × ФОТ / total_epics
+   saving    = prod_epics × (стоимость_эпика₀ − стоимость_эпика)
+   ROI       = (saving − invest₀) / invest₀
+   После подстановки стоимость_эпика = ФОТ / total_epics и prod_epics = T × (1 − d)
+   абсолютные рубли сокращаются и остаётся:
+   ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀                                            */
+const RPARAMS = [
+  {k:"d0", name:"Доля техдолговых эпиков, прошлый квартал", min:0.02, max:0.60, step:0.01, val:0.24, fmt:"pct"},
+  {k:"d",  name:"Доля техдолговых эпиков, текущий квартал", min:0.00, max:0.90, step:0.01, val:0.24, fmt:"pct"},
+  {k:"x",  name:"Закрытых эпиков, текущий к прошлому",      min:0.50, max:2.00, step:0.000001, val:1.160484, fmt:"mult"},
+  {k:"s",  name:"Средний размер эпика, текущий к прошлому", min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult", guardOnly:true},
+  {k:"r",  name:"ФОТ, текущий к прошлому",                  min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult"}
+];
+const RP = Object.fromEntries(RPARAMS.map(p => [p.k, p.val]));
+// защита от нарезки: в формуле объём поставки x × s вместо числа эпиков x.
+// выключена по умолчанию, потому что так считает реальный дашборд
+let GUARD = false;
+const vol = () => RP.x * (GUARD ? RP.s : 1);
+const roiFrom = () => ((1 - RP.d) * (vol() - RP.r) - RP.d0) / RP.d0;
+// обратный ход: какое отношение числа эпиков даёт заданный ROI
+const xForRoi = roi => (RP.r + RP.d0 * (1 + roi) / (1 - RP.d)) / (GUARD ? RP.s : 1);
+
+(function buildR(){
+  const el = document.getElementById("rparams");
+  for (const p of RPARAMS){
+    const d = document.createElement("div");
+    d.className = "rparam" + (p.guardOnly ? " inactive" : "");
+    if (p.guardOnly) d.id = "rp-row-" + p.k;
+    d.innerHTML = `<div class="rp-top"><span class="rp-lab">${p.name}${p.guardOnly ? ' <span class="pill off tiny" id="rp-s-pill">в формуле дашборда не участвует</span>' : ""}</span><span class="rp-val num" id="rv-${p.k}"></span></div>
+      <input type="range" id="rin-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.val}" aria-label="${p.name}">`;
+    el.appendChild(d);
+    d.querySelector("input").addEventListener("input", e => {
+      RP[p.k] = parseFloat(e.target.value);
+      syncSlider("roi", roiFrom());
+      render();
+    });
+  }
+})();
+
+// ROI двусторонний: ползунок метрики пересчитывает отношение числа эпиков
+function syncRoiParams(){
+  RP.x = Math.max(RPARAMS[2].min, Math.min(RPARAMS[2].max, +xForRoi(state.roi).toFixed(6)));
+  const inp = document.getElementById("rin-x");
+  if (inp) inp.value = RP.x;
+}
+document.getElementById("in-roi").addEventListener("input", () => { syncRoiParams(); renderR(); });
+
+function renderR(){
+  for (const p of RPARAMS){
+    document.getElementById("rv-" + p.k).textContent =
+      p.fmt === "pct" ? ru(RP[p.k] * 100, 0) + "%" : "×" + ru(RP[p.k], 3);
+  }
+  const v = roiFrom();
+  const el = document.getElementById("roi-out");
+  el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), 4);
+  el.className = "ro-val num " + cls(v);
+}
+
+/* ---------- профиль DXI: средние по 14 вопросам одной волны опроса ---------- */
+const DXI_Q = [
+  ["q1_2 понятность документации",                  6.6667],
+  ["q1_3 скорость решения инфраструктурных проблем", 6.5926],
+  ["q1_4 удовлетворённость процессом MR",            5.4321],
+  ["q1_5 скорость код-ревью",                        8.0000],
+  ["q1_6 эффективность планирования",                7.9506],
+  ["q1_7 прозрачность приоритетов",                  8.1235],
+  ["q1_8 удовлетворённость тестированием",           7.3827],
+  ["q1_9 лёгкость получить помощь коллег",           9.0988],
+  ["q1_10 эффективность коммуникации в команде",     9.4444],
+  ["q1_11 лёгкость получить помощь других команд",   7.8765],
+  ["q1_13 свобода технических решений",              8.1235],
+  ["q1_14 ощущение влияния",                         7.8765],
+  ["q1_15 общий опыт за последний месяц",            7.7160],
+  ["q1_16 рекомендация друга",                       7.9877]
+];
+(function drawQ(){
+  const el = document.getElementById("qlist");
+  const sorted = [...DXI_Q].sort((a,b) => a[1] - b[1]);
+  const lo = sorted[0][1], hi = sorted[sorted.length - 1][1];
+  const avg = DXI_Q.reduce((a,x) => a + x[1], 0) / DXI_Q.length;
+  for (const [name, v] of sorted){
+    const d = document.createElement("div");
+    d.className = "qrow" + (v === hi ? " hi" : v === lo ? " lo" : "");
+    d.innerHTML = `<span class="q-lab" title="${name}">${name}</span>
+      <span class="qtrack"><i style="width:${(v/10*100).toFixed(1)}%"></i><u style="left:${(avg/10*100).toFixed(1)}%"></u></span>
+      <span class="q-val num">${ru(v,2)}</span>`;
+    el.appendChild(d);
+  }
+  const f = document.createElement("div");
+  f.className = "qrow";
+  f.style.borderTop = "1px solid var(--line)";
+  f.style.marginTop = "6px";
+  f.style.paddingTop = "8px";
+  f.innerHTML = `<span class="q-lab" style="color:var(--ink);font-weight:650">Среднее по 14 вопросам</span>
+    <span class="qtrack"><i style="width:${(avg/10*100).toFixed(1)}%"></i></span>
+    <span class="q-val num" style="color:var(--ink)">${ru(avg,2)}</span>`;
+  el.appendChild(f);
+})();
+
+/* ---------- отрисовка ---------- */
+function render(){
+  const r = compute();
+
+  for (const [k, id] of [["overall","v-overall"],["speed","v-speed"],["effect","v-effect"],["quality","v-quality"],["impact","v-impact"]]){
+    const el = document.getElementById(id);
+    // два знака: расчётные 6,25% на одном знаке печатались как 6,3%,
+    // и произносить со сцены «шесть с четвертью» при 6,3 на экране нельзя
+    el.textContent = pct(r.dim[k], 2);
+    el.className = "t-val num " + cls(r.dim[k]);
+  }
+  for (const dim of DIMS){
+    document.getElementById("s-" + dim.k).textContent =
+      dim.comp.length === dim.all.length
+        ? `${dim.comp.length} ${plural(dim.comp.length)}`
+        : `${dim.comp.length} из ${dim.all.length} метрик`;
+  }
+
+  for (const m of METRICS){
+    document.getElementById("mv-" + m.k).innerHTML = ru(state[m.k], m.dp) + `<span class="m-unit">${m.unit}</span>`;
+    const c = document.getElementById("mc-" + m.k);
+    c.textContent = m.inIndex ? pct(r.comp[m.k]) : (Number.isFinite(r.comp[m.k]) ? pct(r.comp[m.k]) : "н/д");
+    c.className = "m-contrib num " + (m.inIndex ? cls(r.comp[m.k]) : "zeroc");
+    if (m.mirror){
+      document.getElementById("mm-" + m.k).innerHTML =
+        `на дашборде показано как <span class="num">${ru(100 - state[m.k], 2)}%</span> ${m.mirror}`;
+    }
+    if (m.scale){
+      const [tone, text] = statusOf(m.k);
+      document.getElementById("st-" + m.k).outerHTML =
+        `<span class="pill ${tone}" id="st-${m.k}">${text}</span>`;
+    }
+  }
+  for (const dim of DIMS){
+    const el = document.getElementById("gd-" + dim.k);
+    el.textContent = pct(r.dim[dim.k]);
+    el.className = "group-dev num " + cls(r.dim[dim.k]);
+  }
+
+  const diff = r.alt.overall - r.dim.overall;
+  document.getElementById("alt-line").innerHTML =
+    `<strong>* Если бы в индекс входили все пятнадцать метрик</strong>, общая продуктивность была бы ` +
+    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 2)}</span> вместо ` +
+    `<span class="num ${cls(r.dim.overall)}">${pct(r.dim.overall, 2)}</span>` +
+    (Math.abs(diff) >= 0.005
+        ? `, разница <span class="num">${pct(diff, 2)}</span>. Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.`
+        // разница может быть нулевой по двум причинам, и путать их нельзя:
+        // серые метрики либо стоят на базе, либо сдвинуты ровно так же, как остальные
+        : METRICS.filter(m => !m.inIndex && m.dir !== 0)
+                 .every(m => Math.abs(state[m.k] - m.etalon) < 1e-9)
+            ? ". Сейчас разницы нет: серые метрики стоят на своей базе."
+            : ". Разницы нет: серые метрики сдвинуты ровно так же, как остальные.");
+
+  drawChart(r);
+  renderR();
+}
+const plural = n => n === 1 ? "метрика" : n < 5 ? "метрики" : "метрик";
+
+function drawChart(r){
+  const rows = [];
+  for (const dim of DIMS){
+    rows.push({lab:dim.name, val:r.dim[dim.k], dim:true});
+    for (const k of dim.all) rows.push({lab:M[k].name, val:r.comp[k], dim:false, key:k, off:!M[k].inIndex});
+  }
+  const peak = Math.max(12, ...rows.map(x => Math.abs(x.val)).filter(v => Number.isFinite(v) && v < 400));
+  const el = document.getElementById("chart");
+  el.innerHTML = "";
+  rows.forEach((row, i) => {
+    if (i > 0 && row.dim){
+      const s = document.createElement("div"); s.className = "chart-sep"; el.appendChild(s);
+    }
+    const d = document.createElement("div");
+    d.className = "chart-row" + (row.dim ? " dimrow" : "") + (row.off ? " offrow" : "");
+    const w = Number.isFinite(row.val) ? Math.min(50, Math.abs(row.val) / peak * 50) : 0;
+    const bar = (!Number.isFinite(row.val) || Math.abs(row.val) < 0.05) ? ""
+      : `<span class="bar ${row.val > 0 ? "p" : "n"}" style="width:${w}%"></span>`;
+    d.innerHTML = `<span class="cr-lab">${row.lab}</span>
+      <span class="bartrack">${bar}</span>
+      <span class="cr-val num ${cls(row.val)}">${pct(row.val)}</span>`;
+    if (row.key) d.title = M[row.key].name + ": " + M[row.key].desc;
+    el.appendChild(d);
+  });
+}
+
+/* ---------- сценарии ---------- */
+const clamp = (m, v) => Math.max(m.min, Math.min(m.max, +v.toFixed(4)));
+function shift(f, list){                 // f = доля улучшения, отрицательная значит ухудшение
+  for (const m of (list || METRICS)){
+    if (m.dir === 0) continue;
+    state[m.k] = clamp(m, m.etalon + m.dir * Math.abs(m.etalon) * f);
+  }
+}
+const PRESETS = {
+  reset(){
+    for (const m of METRICS) state[m.k] = m.etalon;
+    // параметры панели ROI тоже возвращаются к базе, иначе случайно тронутый
+    // ползунок доли техдолга ломает последующие сценарии без возможности вернуть
+    for (const p of RPARAMS){
+      RP[p.k] = p.val;
+      const inp = document.getElementById("rin-" + p.k);
+      if (inp) inp.value = p.val;
+    }
+  },
+  better10(){ PRESETS.reset(); shift(0.1); },
+  worse10(){ PRESETS.reset(); shift(-0.1); },
+  deploy2x(){ PRESETS.reset(); state.deploy = clamp(M.deploy, M.deploy.etalon * 2); },
+  dxielite(){ PRESETS.reset(); state.dxiRaw = 8.5; },
+  roiplus(){ PRESETS.reset(); state.roi = 0.15; },
+  cfrzero(){ PRESETS.reset(); state.cfr = 0; },
+  offonly(){ PRESETS.reset(); shift(0.5, METRICS.filter(m => !m.inIndex)); },
+  // та же работа, нарезанная на большее число задач и эпиков: в реальности не изменилось ничего
+  epicsplit(){
+    PRESETS.reset();
+    const px = RPARAMS[2], ps = RPARAMS[3];
+    // множитель задан относительно базы и подобран так, чтобы при заводской
+    // базе x стал ровно 1,5: это значение вшито в кадры на слайдах доклада
+    RP.x = Math.max(px.min, Math.min(px.max, +(px.val * 1.5 / 1.160484).toFixed(6)));
+    // средний размер эпика падает так, что объём поставки x × s остаётся базовым
+    RP.s = Math.max(ps.min, Math.min(ps.max, +(ps.val * px.val / RP.x).toFixed(6)));
+    for (const k of ["x", "s"]){
+      const inp = document.getElementById("rin-" + k);
+      if (inp) inp.value = RP[k];
+    }
+    state.roi = clamp(M.roi, roiFrom());
+    // от дробления работы улучшается не только ROI: число закрытых эпиков за период
+    // и число закрытых задач на человека растут ровно во столько же раз
+    state.fdr = clamp(M.fdr, M.fdr.etalon * 1.5);
+    state.through = clamp(M.through, M.through.etalon * 1.5);
+  }
+};
+// Technical Debt Ratio и Innovation Time дополняют друг друга до 100 по построению,
+// поэтому после любого сценария тождество восстанавливается явно.
+function normalizeTwins(){ state.tdr = clamp(M.tdr, 100 - state.inno); }
+
+/* «Установить как базовые значения»: текущие позиции ползунков становятся базой,
+   от которой считаются отклонения и от которой отталкиваются сценарии.
+   Заводская база возвращается перезагрузкой страницы. */
+function refreshBaseUI(){
+  for (const m of METRICS){
+    const p = (m.etalon - m.min) / (m.max - m.min) * 100;
+    document.getElementById("tick-" + m.k).style.left = Math.max(0, Math.min(100, p)) + "%";
+    document.getElementById("me-" + m.k).textContent = ru(m.etalon, m.dp);
+  }
+}
+document.getElementById("setbase").addEventListener("click", () => {
+  // пара state.roi / параметры панели ROI согласуется до фиксации, иначе кламп
+  // ползунка ROI запёкся бы в базу противоречием двух цифр одной метрики
+  syncRoiParams();
+  state.roi = clamp(M.roi, roiFrom());
+  document.getElementById("in-roi").value = state.roi;
+  for (const m of METRICS) m.etalon = state[m.k];
+  for (const p of RPARAMS) p.val = RP[p.k];
+  refreshBaseUI();
+  render();
+});
+
+document.getElementById("roi-guard").addEventListener("change", e => {
+  GUARD = e.target.checked;
+  document.getElementById("ro-lab").textContent = GUARD ? "ROI с защитой от нарезки" : "ROI по формуле дашборда";
+  document.getElementById("rp-row-s").classList.toggle("inactive", !GUARD);
+  document.getElementById("rp-s-pill").style.display = GUARD ? "none" : "";
+  // формула сменилась: ползунок ROI идёт за новым значением, параметры не трогаем
+  syncSlider("roi", roiFrom());
+  render();
+});
+
+// подсказки сводных плиток: открыта не больше одной за раз
+for (const d of document.querySelectorAll(".t-how")){
+  d.addEventListener("toggle", () => {
+    if (d.open) for (const o of document.querySelectorAll(".t-how[open]")) if (o !== d) o.open = false;
+  });
+}
+
+syncRoiParams();   // приводим параметры ROI к базе до первой отрисовки
+
+function applyPreset(name){
+  if (!PRESETS[name]) return false;
+  PRESETS[name]();
+  normalizeTwins();
+  syncRoiParams();
+  for (const m of METRICS) document.getElementById("in-" + m.k).value = state[m.k];
+  render();
+  return true;
+}
+
+for (const b of document.querySelectorAll("[data-preset]")){
+  b.addEventListener("click", () => {
+    applyPreset(b.dataset.preset);
+    location.hash = b.dataset.preset;
+  });
+}
+
+// сценарий открывается прямой ссылкой: #epicsplit, #offonly и так далее.
+// нужно для показа со сцены (заранее открытые вкладки) и для воспроизводимых
+// кадров, которые стоят на слайдах доклада
+addEventListener("hashchange", () => applyPreset(location.hash.slice(1)));
+
+render();
+applyPreset(location.hash.slice(1));
+</script>
+</body>
+</html>
