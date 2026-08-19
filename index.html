@@ -266,7 +266,7 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
     <h2>Из чего складывается DXI</h2>
     <p class="hint">Средние по 14 вопросам одной волны опроса, шкала 1–10. Профиль статичен: он объясняет, из чего собран балл, а не как он менялся.</p>
     <div id="qlist"></div>
-    <p class="note"><strong>Сравнение с мировым бенчмарком.</strong> Мировой бенчмарк DXI это 6,8–7,2. Среднее нашей волны 7,73 выше бенчмарка: категория High, здоровая организация. Шкала категорий: от 8,0 Elite (топ-10% компаний), 7,0–8,0 High (здоровая организация), 6,0–7,0 Medium (зона риска), ниже 6,0 Low (критическая ситуация).</p>
+    <p class="note"><strong>Сравнение с мировым бенчмарком.</strong> Мировой бенчмарк DXI это 6,8–7,2. Среднее нашей волны 7,7 выше бенчмарка: категория High, здоровая организация. Шкала категорий: от 8,0 Elite (топ-10% компаний), 7,0–8,0 High (здоровая организация), 6,0–7,0 Medium (зона риска), ниже 6,0 Low (критическая ситуация).</p>
   </section>
 </div>
 
@@ -278,7 +278,7 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
     <label class="guard-toggle"><input type="checkbox" id="roi-guard"><span>Формула с защитой от нарезки: вместо числа эпиков объём поставки (число × средний размер эпика)</span></label>
     <div class="roi-out">
       <span class="ro-lab" id="ro-lab">ROI по формуле дашборда</span>
-      <span class="ro-val num" id="roi-out">−0,4918</span>
+      <span class="ro-val num" id="roi-out">−0,4</span>
     </div>
     <p class="note"><strong>Как читать.</strong> Параметры заданы в отношениях к прошлому кварталу, потому что после сокращения формулы абсолютные рубли из неё уходят. Значения по умолчанию подобраны так, чтобы воспроизвести базовое значение −0,4918.</p>
   </section>
@@ -329,38 +329,38 @@ s     = во сколько раз изменился средний разме�
    inIndex: входит ли метрика в сводную плитку своего измерения.
    dir: +1 больше лучше, −1 меньше лучше, 0 направление на дашборде не задано.  */
 const METRICS = [
-  {k:"cycle",   dim:"speed",   inIndex:true,  name:"Cycle Time",           unit:"ч",              etalon:94.5167, min:40,  max:180, step:0.5,  dir:-1, dp:1,
+  {k:"cycle",   dim:"speed",   inIndex:true,  name:"Cycle Time",           unit:"ч",              etalon:94.5167, min:40,  max:180, step:0.5,  dir:-1, dp:0,
    desc:"медиана по задачам: время от перехода задачи в статус In Progress до Closed, то есть от взятия в работу до закрытия"},
-  {k:"deploy",  dim:"speed",   inIndex:true,  name:"Deployment Frequency", unit:"релизов/день",   etalon:9.1304,  min:1,   max:30,  step:0.1,  dir:1,  dp:2,
+  {k:"deploy",  dim:"speed",   inIndex:true,  name:"Deployment Frequency", unit:"релизов/день",   etalon:9.1304,  min:1,   max:30,  step:0.1,  dir:1,  dp:0,
    desc:"число релизов всех сервисов за период, делённое на число дней периода"},
-  {k:"delivery",dim:"speed",   inIndex:true,  name:"Delivery Time",        unit:"дней",           etalon:15.9767, min:5,   max:45,  step:0.1,  dir:-1, dp:2,
+  {k:"delivery",dim:"speed",   inIndex:true,  name:"Delivery Time",        unit:"дней",           etalon:15.9767, min:5,   max:45,  step:0.1,  dir:-1, dp:0,
    desc:"медиана по эпикам: время от входа эпика в статус In Technical Design до Rolling out, то есть весь путь от начала технической проработки до раскатки"},
-  {k:"through", dim:"speed",   inIndex:true,  name:"Throughput",           unit:"задач/чел/мес",  etalon:10.9031, min:2,   max:30,  step:0.1,  dir:1,  dp:2,
+  {k:"through", dim:"speed",   inIndex:true,  name:"Throughput",           unit:"задач/чел/мес",  etalon:10.9031, min:2,   max:30,  step:0.1,  dir:1,  dp:0,
    desc:"закрытые за месяц задачи, делённые на число уникальных исполнителей"},
 
-  {k:"dxiRaw",  dim:"effect",  inIndex:true,  name:"DXI",                  unit:"балл из 10",     etalon:7.7337,  min:4,   max:10,  step:0.01, dir:1,  dp:2,
+  {k:"dxiRaw",  dim:"effect",  inIndex:true,  name:"DXI",                  unit:"балл из 10",     etalon:7.7337,  min:4,   max:10,  step:0.01, dir:1,  dp:1,
    desc:"среднее по 14 числовым вопросам опроса разработчиков, каждый вопрос по шкале от 1 до 10; состав вопросов в панели «Из чего складывается DXI»", scale:"dxi"},
-  {k:"flow",    dim:"effect",  inIndex:false, name:"Flow State Frequency", unit:"балл",           etalon:5.3086,  min:1,   max:10,  step:0.05, dir:1,  dp:2,
+  {k:"flow",    dim:"effect",  inIndex:false, name:"Flow State Frequency", unit:"балл",           etalon:5.3086,  min:1,   max:10,  step:0.05, dir:1,  dp:1,
    desc:"балл из опроса; единица измерения на дашборде не определена: то ли процент времени, то ли частота, то ли балл", flagUnit:true, oneWave:true},
-  {k:"cli",     dim:"effect",  inIndex:false, name:"Cognitive Load Index", unit:"балл",           etalon:6.3992,  min:1,   max:10,  step:0.05, dir:-1, dp:2,
+  {k:"cli",     dim:"effect",  inIndex:false, name:"Cognitive Load Index", unit:"балл",           etalon:6.3992,  min:1,   max:10,  step:0.05, dir:-1, dp:1,
    desc:"балл из опроса; состав вопросов и шкала на дашборде не описаны, внешнего ориентира нет", flagUnit:true, oneWave:true},
-  {k:"csr",     dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", etalon:1.6433, min:0.5, max:5, step:0.01, dir:-1, dp:3,
+  {k:"csr",     dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", etalon:1.6433, min:0.5, max:5, step:0.01, dir:-1, dp:1,
    desc:"число переключений на человека в день; переключением считается перевод задачи в активный статус, поэтому значение растёт с длиной workflow"},
 
-  {k:"cfr",     dim:"quality", inIndex:true,  name:"Change Failure Rate",  unit:"%",              etalon:1.4484,  min:0,   max:12,  step:0.05, dir:-1, dp:2,
+  {k:"cfr",     dim:"quality", inIndex:true,  name:"Change Failure Rate",  unit:"%",              etalon:1.4484,  min:0,   max:12,  step:0.05, dir:-1, dp:1,
    desc:"доля релизов с резолюцией Failed среди всех релизов за период; на дашборде плитка показывает долю успешных релизов, здесь взята честная обратная величина; по шкале DORA до 5% это Elite", scale:"cfr", mirror:"успешных релизов"},
   {k:"mttr",    dim:"quality", inIndex:true,  name:"MTTR",                 unit:"минут",          etalon:76,      min:10,  max:300, step:1,    dir:-1, dp:0,
    desc:"MTTR (mean time to recovery), общее время устранения инцидента. Время реакции = дата создания задачи в Jira − фактическое время возникновения инцидента; время решения = фактическое время решения − дата создания задачи. MTTR = median(время реакции + время решения) по инцидентам скользящего окна; если инцидентов в окне не было, MTTR = 0. Инциденты с отрицательным временем реакции или решения учитываются, поэтому MTTR может быть меньше нуля"},
-  {k:"ber",     dim:"quality", inIndex:true,  name:"Bug Escape Rate",      unit:"баг/1000 строк", etalon:0.9119,  min:0.1, max:3,   step:0.01, dir:-1, dp:3,
+  {k:"ber",     dim:"quality", inIndex:true,  name:"Bug Escape Rate",      unit:"баг/1000 строк", etalon:0.9119,  min:0.1, max:3,   step:0.01, dir:-1, dp:1,
    desc:"баги за период, делённые на тысячи добавленных строк кода; числитель и знаменатель напрямую не связаны: баг может прийти из кода, написанного раньше"},
-  {k:"tdr",     dim:"quality", inIndex:false, name:"Technical Debt Ratio", unit:"%",              etalon:42.5163, min:0,   max:100, step:0.1,  dir:0,  dp:2,
+  {k:"tdr",     dim:"quality", inIndex:false, name:"Technical Debt Ratio", unit:"%",              etalon:42.5163, min:0,   max:100, step:0.1,  dir:0,  dp:0,
    desc:"доля суммарного delivery time, приходящаяся на технические эпики; направление в индексе не задано"},
 
-  {k:"roi",     dim:"impact",  inIndex:true,  name:"ROI",                  unit:"доля",           etalon:-0.4918, min:-1.5,max:1.5, step:0.01, dir:1,  dp:4,
+  {k:"roi",     dim:"impact",  inIndex:true,  name:"ROI",                  unit:"доля",           etalon:-0.4918, min:-1.5,max:1.5, step:0.01, dir:1,  dp:1,
    desc:"отдача от вложений в техдолг по формуле дашборда: вложения это доля ФОТ, ушедшая на технические эпики, экономия это число продуктовых эпиков, умноженное на удешевление среднего эпика, ROI = (экономия − вложения прошлого квартала) / вложения прошлого квартала. Раскладка по параметрам в панели «ROI: что им на самом деле управляет». Базовое значение отрицательное (−0,4918), поэтому отклонение нормируется на модуль базы"},
-  {k:"fdr",     dim:"impact",  inIndex:false, name:"Feature Delivery Rate",unit:"эпиков/мес",     etalon:83.3333, min:20,  max:160, step:0.5,  dir:1,  dp:1,
+  {k:"fdr",     dim:"impact",  inIndex:false, name:"Feature Delivery Rate",unit:"эпиков/мес",     etalon:83.3333, min:20,  max:160, step:0.5,  dir:1,  dp:0,
    desc:"закрытые продуктовые (нетехнические) эпики в месяц, без нормировки на размер эпика"},
-  {k:"inno",    dim:"impact",  inIndex:false, name:"Innovation Time",      unit:"%",              etalon:57.4837, min:0,   max:100, step:0.1,  dir:1,  dp:2,
+  {k:"inno",    dim:"impact",  inIndex:false, name:"Innovation Time",      unit:"%",              etalon:57.4837, min:0,   max:100, step:0.1,  dir:1,  dp:0,
    desc:"доля времени на продуктовые (нетехнические) эпики; по построению это в точности 100 минус Technical Debt Ratio", twin:"tdr"}
 ];
 
@@ -408,8 +408,11 @@ function compute(){
 }
 
 /* ---------- форматирование ---------- */
+// отображение усекается в меньшую сторону (к нулю): хвосты сотых и тысячных не показываем.
+// эпсилон гасит двоичную погрешность, иначе 7,7 × 10 = 76,999... усеклось бы в 7,6
+const cut = (v, dp) => { const f = 10 ** dp; return Math.trunc(v * f + Math.sign(v) * 1e-9) / f; };
 const ru = (v, dp) => Number.isFinite(v)
-  ? v.toLocaleString("ru-RU", {minimumFractionDigits:dp, maximumFractionDigits:dp}) : "н/д";
+  ? cut(v, dp).toLocaleString("ru-RU", {minimumFractionDigits:dp, maximumFractionDigits:dp}) : "н/д";
 function pct(v, dp){
   if (!Number.isFinite(v)) return "н/д";
   const d = dp === undefined ? (Math.abs(v) >= 1000 ? 0 : 1) : dp;
@@ -534,6 +537,9 @@ const xForRoi = roi => (RP.r + RP.d0 * (1 + roi) / (1 - RP.d)) / (GUARD ? RP.s :
 
 // ROI двусторонний: ползунок метрики пересчитывает отношение числа эпиков
 function syncRoiParams(){
+  // пара уже согласована в пределах шага ползунка: не перетираем ровное значение x
+  // (иначе округлённый state.roi возвращал бы 1,499989 вместо заданных пресетом 1,5)
+  if (Math.abs(roiFrom() - state.roi) < 5e-4) return;
   RP.x = Math.max(RPARAMS[2].min, Math.min(RPARAMS[2].max, +xForRoi(state.roi).toFixed(6)));
   const inp = document.getElementById("rin-x");
   if (inp) inp.value = RP.x;
@@ -543,11 +549,14 @@ document.getElementById("in-roi").addEventListener("input", () => { syncRoiParam
 function renderR(){
   for (const p of RPARAMS){
     document.getElementById("rv-" + p.k).textContent =
-      p.fmt === "pct" ? ru(RP[p.k] * 100, 0) + "%" : "×" + ru(RP[p.k], 3);
+      p.fmt === "pct" ? ru(RP[p.k] * 100, 0) + "%" : "×" + ru(RP[p.k], 1);
   }
-  const v = roiFrom();
+  // пара согласована в пределах шага ползунка: показываем ровное значение ползунка,
+  // а не хвост пересчёта (иначе при базе 1,5 индикатор усекался бы в 1,4)
+  const raw = roiFrom();
+  const v = Math.abs(raw - state.roi) < 5e-4 ? state.roi : raw;
   const el = document.getElementById("roi-out");
-  el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), 4);
+  el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), 1);
   el.className = "ro-val num " + cls(v);
 }
 
@@ -578,7 +587,7 @@ const DXI_Q = [
     d.className = "qrow" + (v === hi ? " hi" : v === lo ? " lo" : "");
     d.innerHTML = `<span class="q-lab" title="${name}">${name}</span>
       <span class="qtrack"><i style="width:${(v/10*100).toFixed(1)}%"></i><u style="left:${(avg/10*100).toFixed(1)}%"></u></span>
-      <span class="q-val num">${ru(v,2)}</span>`;
+      <span class="q-val num">${ru(v,1)}</span>`;
     el.appendChild(d);
   }
   const f = document.createElement("div");
@@ -588,7 +597,7 @@ const DXI_Q = [
   f.style.paddingTop = "8px";
   f.innerHTML = `<span class="q-lab" style="color:var(--ink);font-weight:650">Среднее по 14 вопросам</span>
     <span class="qtrack"><i style="width:${(avg/10*100).toFixed(1)}%"></i></span>
-    <span class="q-val num" style="color:var(--ink)">${ru(avg,2)}</span>`;
+    <span class="q-val num" style="color:var(--ink)">${ru(avg,1)}</span>`;
   el.appendChild(f);
 })();
 
@@ -598,9 +607,7 @@ function render(){
 
   for (const [k, id] of [["overall","v-overall"],["speed","v-speed"],["effect","v-effect"],["quality","v-quality"],["impact","v-impact"]]){
     const el = document.getElementById(id);
-    // два знака: расчётные 6,25% на одном знаке печатались как 6,3%,
-    // и произносить со сцены «шесть с четвертью» при 6,3 на экране нельзя
-    el.textContent = pct(r.dim[k], 2);
+    el.textContent = pct(r.dim[k], 1);
     el.className = "t-val num " + cls(r.dim[k]);
   }
   for (const dim of DIMS){
@@ -617,7 +624,7 @@ function render(){
     c.className = "m-contrib num " + (m.inIndex ? cls(r.comp[m.k]) : "zeroc");
     if (m.mirror){
       document.getElementById("mm-" + m.k).innerHTML =
-        `на дашборде показано как <span class="num">${ru(100 - state[m.k], 2)}%</span> ${m.mirror}`;
+        `на дашборде показано как <span class="num">${ru(100 - state[m.k], 1)}%</span> ${m.mirror}`;
     }
     if (m.scale){
       const [tone, text] = statusOf(m.k);
@@ -634,10 +641,10 @@ function render(){
   const diff = r.alt.overall - r.dim.overall;
   document.getElementById("alt-line").innerHTML =
     `<strong>* Если бы в индекс входили все пятнадцать метрик</strong>, общая продуктивность была бы ` +
-    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 2)}</span> вместо ` +
-    `<span class="num ${cls(r.dim.overall)}">${pct(r.dim.overall, 2)}</span>` +
+    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 1)}</span> вместо ` +
+    `<span class="num ${cls(r.dim.overall)}">${pct(r.dim.overall, 1)}</span>` +
     (Math.abs(diff) >= 0.005
-        ? `, разница <span class="num">${pct(diff, 2)}</span>. Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.`
+        ? `, разница <span class="num">${pct(diff, 1)}</span>. Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.`
         // разница может быть нулевой по двум причинам, и путать их нельзя:
         // серые метрики либо стоят на базе, либо сдвинуты ровно так же, как остальные
         : METRICS.filter(m => !m.inIndex && m.dir !== 0)
