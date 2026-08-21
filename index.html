@@ -214,6 +214,7 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
   <button type="button" class="chipbtn" data-preset="roiplus">ROI вышел в плюс</button>
   <button type="button" class="chipbtn" data-preset="cfrzero">Ни одного отказа</button>
   <button type="button" class="chipbtn" data-preset="epicsplit">Нарезали задачи мельче</button>
+  <button type="button" class="chipbtn" id="lang-btn" style="margin-left:auto"></button>
 </div>
 
 <section class="readout" aria-label="Сводные индексы">
@@ -325,6 +326,147 @@ s     = во сколько раз изменился средний разме�
 <script>
 "use strict";
 
+/* ---------- локализация ----------
+   Язык: ?lang=ru|en в адресе, иначе по языку браузера. Русский остаётся
+   источником правды в разметке и данных; английский накладывается словарём
+   при загрузке. Кадры для слайдов снимаются с ?lang=ru (slides/shots.py). */
+const LANG = (() => {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "ru" || q === "en") return q;
+  return (navigator.language || "ru").toLowerCase().startsWith("ru") ? "ru" : "en";
+})();
+const EN = LANG === "en";
+const LOCALE = EN ? "en-US" : "ru-RU";
+
+const S = EN ? {
+  na:"n/a", of:"of", inIndexShort:"in the index", baseWord:"base",
+  dirUp:"higher is better", dirDown:"lower is better", dirNone:"no direction set",
+  notInIndex:"not in the index", oneWave:"one survey wave", unitUndef:"unit not defined",
+  howCalc:"how it's measured", metricsMany:"metrics",
+  mirrorPrefix:"shown on the dashboard as ",
+  noFormula:"not part of the dashboard formula",
+  avg14:"Average of 14 questions",
+  roiPlain:"ROI by the dashboard formula", roiGuard:"ROI with slicing protection",
+  altPrefix:"<strong>* If the index included all fifteen metrics</strong>, overall productivity would be ",
+  altInstead:" instead of ",
+  altDiffA:", a difference of ",
+  altDiffB:". But you must not do this: an index recomposed after the fact breaks comparability with past measurements and turns the metric into cherry-picking components for the number you want.",
+  altZeroBase:". Right now there is no difference: the grey metrics sit at their base values.",
+  altZeroSame:". No difference: the grey metrics are shifted exactly like the rest.",
+  dxiElite:"Elite, top 10% of companies", dxiHigh:"High, healthy organization",
+  dxiMedium:"Medium, risk zone", dxiLow:"Low, critical",
+  cfrElite:"DORA Elite, under 5%", cfrHigh:"DORA High, under 10%",
+  cfrMedium:"DORA Medium, under 15%", cfrLow:"DORA Low, above 15%"
+} : {
+  na:"н/д", of:"из", inIndexShort:"в индексе", baseWord:"база",
+  dirUp:"больше лучше", dirDown:"меньше лучше", dirNone:"направление не задано",
+  notInIndex:"не входит в индекс", oneWave:"одна волна опроса", unitUndef:"единица не определена",
+  howCalc:"как считается", metricsMany:"метрик",
+  mirrorPrefix:"на дашборде показано как ",
+  noFormula:"в формуле дашборда не участвует",
+  avg14:"Среднее по 14 вопросам",
+  roiPlain:"ROI по формуле дашборда", roiGuard:"ROI с защитой от нарезки",
+  altPrefix:"<strong>* Если бы в индекс входили все пятнадцать метрик</strong>, общая продуктивность была бы ",
+  altInstead:" вместо ",
+  altDiffA:", разница ",
+  altDiffB:". Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.",
+  altZeroBase:". Сейчас разницы нет: серые метрики стоят на своей базе.",
+  altZeroSame:". Разницы нет: серые метрики сдвинуты ровно так же, как остальные.",
+  dxiElite:"Elite, топ-10% компаний", dxiHigh:"High, здоровая организация",
+  dxiMedium:"Medium, зона риска", dxiLow:"Low, критическая ситуация",
+  cfrElite:"DORA Elite, до 5%", cfrHigh:"DORA High, до 10%",
+  cfrMedium:"DORA Medium, до 15%", cfrLow:"DORA Low, выше 15%"
+};
+
+if (EN){
+  document.documentElement.lang = "en";
+  document.title = "DX Core 4: metrics simulator";
+  document.querySelector(".readout").setAttribute("aria-label", "Summary indexes");
+  const H = [
+    ["header.masthead .eyebrow", "simulator · DX Core 4"],
+    ["header.masthead h1", "DX Core 4: how input metrics become the index"],
+    ["header.masthead p:not(.eyebrow)", "An interactive model of a composite productivity index, built from a real DX Core 4 dashboard. Use it to see how the headline number works: which metrics enter the index and with what weight, how strongly each slider moves the summary tiles, and which scenarios inflate the numbers without changing any real work."],
+    [".controls .lbl", "Scenarios"],
+    ['[data-preset="reset"]', "Reset"],
+    ['[data-preset="better10"]', "Everything 10% better"],
+    ['[data-preset="worse10"]', "Everything 10% worse"],
+    ['[data-preset="deploy2x"]', "Ship twice as often"],
+    ['[data-preset="dxielite"]', "DXI to Elite"],
+    ['[data-preset="roiplus"]', "ROI turns positive"],
+    ['[data-preset="cfrzero"]', "Zero failures"],
+    ['[data-preset="epicsplit"]', "Sliced tasks smaller"],
+    [".tile.hero .t-lab", "Overall productivity"],
+    [".tile.hero .t-sub", "average of the four dimensions, relative to base values"],
+    [".tile.hero .t-how summary", "what's inside"],
+    [".tile.hero .t-how .pop", "The average of four dimensions: Speed, Effectiveness, Quality, Impact. Each dimension is the average of its index metrics' deviations; a deviation is measured from the base: ±(current − base) / |base| × 100, with the sign set by the metric's direction (“lower is better” or “higher is better”). A metric's weight is 1 / (number of index metrics in the dimension) / 4, so DXI and ROI each weigh 25% of the headline number, while Cycle Time only 6.25%."],
+    [".readout-grid .tile:nth-child(2) .t-lab", "Speed"],
+    [".readout-grid .tile:nth-child(2) .t-how summary", "what's inside"],
+    [".readout-grid .tile:nth-child(2) .t-how .pop", "The average deviation of Cycle Time, Deployment Frequency, Delivery Time and Throughput. All four are in the index; each weighs a quarter of the dimension, that is 6.25% of the headline number."],
+    [".readout-grid .tile:nth-child(3) .t-lab", "Effectiveness"],
+    [".readout-grid .tile:nth-child(3) .t-how summary", "what's inside"],
+    [".readout-grid .tile:nth-child(3) .t-how .pop", "Of the four metrics in this section only DXI is in the index: the tile equals its deviation, weighing 25% of the headline number. Flow State Frequency, Cognitive Load Index and Context Switching Rate are shown in grey and do not affect the index."],
+    [".readout-grid .tile:nth-child(4) .t-lab", "Quality"],
+    [".readout-grid .tile:nth-child(4) .t-how summary", "what's inside"],
+    [".readout-grid .tile:nth-child(4) .t-how .pop", "The average deviation of Change Failure Rate, MTTR and Bug Escape Rate, each weighing 8.33% of the headline number. Technical Debt Ratio is not in the index: the metric's direction is not set."],
+    [".readout-grid .tile:nth-child(5) .t-lab", "Impact"],
+    [".readout-grid .tile:nth-child(5) .t-how summary", "what's inside"],
+    [".readout-grid .tile:nth-child(5) .t-how .pop", "Of the three metrics in this section only ROI is in the index: the tile equals its deviation, weighing 25% of the headline number. Feature Delivery Rate and Innovation Time are not in the index."],
+    [".basebar .lbl", "Base"],
+    ["#setbase", "Set as base values"],
+    [".cols > .panel:nth-child(1) > h2", "Dashboard input metrics"],
+    [".cols > .panel:nth-child(1) > .hint", "The grey tick on a track is the base value. The “Set as base values” button makes the current slider positions the base, and scenarios start from it. To the right of each slider is the metric's deviation from base. Metrics marked “not in the index” do not affect the summary tiles."],
+    [".cols > .panel:nth-child(2) > h2", "Deviation from base"],
+    [".cols > .panel:nth-child(2) > .hint", "Left is worse, right is better. Bold rows are dimensions, their metrics below. Faded rows are not part of the dimension."],
+    [".legend span:nth-child(1)", '<i class="sw" style="background:var(--pos)"></i>better than base'],
+    [".legend span:nth-child(2)", '<i class="sw" style="background:var(--neg)"></i>worse than base'],
+    [".legend span:nth-child(3)", '<i class="sw" style="background:var(--zero);width:2px;height:12px;border-radius:1px"></i>base'],
+    [".axis-note", "<span>worse</span><span>base</span><span>better</span>"],
+    [".dxi-block .panel > h2", "What DXI is made of"],
+    [".dxi-block .panel > .hint", "Averages of 14 questions from one survey wave, scale 1–10. The profile is static: it explains what the score is made of, not how it changed."],
+    [".dxi-block .panel > .note", "<strong>Against the world benchmark.</strong> The world DXI benchmark is 6.8–7.2. Our wave's average of 7.7 is above the benchmark: category High, a healthy organization. The category scale: above 8.0 Elite (top 10% of companies), 7.0–8.0 High (healthy organization), 6.0–7.0 Medium (risk zone), below 6.0 Low (critical)."],
+    [".roi-block > .panel:nth-child(1) > h2", "ROI: what actually drives it"],
+    [".roi-block > .panel:nth-child(1) > .hint", "The dashboard formula unfolded into its input values. Move the parameters: the ROI slider above follows, and vice versa. The protection toggle puts delivery volume into the formula instead of epic count, and slicing stops affecting ROI."],
+    [".guard-toggle span", "Slicing-protected formula: delivery volume instead of epic count (count × average epic size)"],
+    ["#ro-lab", "ROI by the dashboard formula"],
+    [".roi-block > .panel:nth-child(1) > .note", "<strong>How to read this.</strong> Parameters are set as ratios to the previous quarter, because after the formula simplifies, absolute money drops out of it. The defaults are chosen to reproduce the base value of −0.4918."],
+    [".roi-block > .panel:nth-child(2) > h2", "What follows from this"],
+    [".roi-block > .panel:nth-child(2) > .hint", "The dashboard formula reduces to four values, and money is not among them."],
+    [".roi-block > .panel:nth-child(2) thead tr", "<th>What the team does</th><th>What ROI does</th>"],
+    [".roi-block > .panel:nth-child(2) tbody", '<tr><td>Nothing changed: same epics, same payroll</td><td class="neg">exactly −100%</td></tr><tr><td>Sliced the same work into twice as many epics</td><td class="pos">sharply up</td></tr><tr><td>Invested more in tech debt <em>last</em> quarter</td><td class="neg">down</td></tr><tr><td>Invests more in tech debt <em>now</em></td><td class="neg">down</td></tr><tr><td>Hired people, payroll grew</td><td class="neg">down</td></tr><tr><td>Actually sped up delivery without more epics</td><td class="zeroc">no change</td></tr>'],
+    [".roi-block > .panel:nth-child(2) .note", "<strong>The point.</strong> The metric is sold as return on tech-debt investment, but it is built to punish both past investment (it sits in the denominator) and current investment (the 1 − d multiplier). The fastest way to raise ROI is to stop working on tech debt and slice the same work into more epics. The “slicing protection” toggle shows the fix: the formula counts delivery volume, and splitting stops working. Throughput and Feature Delivery Rate are not covered by this protection: they still count pieces."],
+    [".roi-block > .panel:nth-child(2) .note + .note", "<strong>Two different tech-debt shares.</strong> Inside ROI the share is computed from epic counts, while the Technical Debt Ratio tile in the Quality section computes the share from total delivery time. These are two different values with the same name, so they cannot be linked directly until a single base is chosen."]
+  ];
+  for (const [sel, html] of H){
+    const el = document.querySelector(sel);
+    if (el) el.innerHTML = html;
+  }
+  document.querySelector(".formula").textContent =
+`invest    = tech_epics × payroll / total_epics
+saving    = prod_epics × (epic_cost₀ − epic_cost)
+ROI       = (saving − invest₀) / invest₀
+
+after simplification:
+ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀
+
+d, d₀ = share of tech-debt epics now and in the previous quarter
+T/T₀  = ratio of closed epic counts
+r     = ratio of payroll
+
+with slicing protection:
+ROI = ((1 − d) × (T/T₀ × s − r) − d₀) / d₀
+
+s     = ratio of average epic size:
+        with slicing T grows, s falls, T × s stays put`;
+}
+
+const langBtn = document.getElementById("lang-btn");
+langBtn.textContent = EN ? "RU" : "EN";
+langBtn.addEventListener("click", () => {
+  const u = new URL(location.href);
+  u.searchParams.set("lang", EN ? "ru" : "en");
+  location.href = u.href;
+});
+
 /* ---------- модель ----------
    inIndex: входит ли метрика в сводную плитку своего измерения.
    dir: +1 больше лучше, −1 меньше лучше, 0 направление на дашборде не задано.  */
@@ -364,12 +506,36 @@ const METRICS = [
    desc:"доля времени на продуктовые (нетехнические) эпики; по построению это в точности 100 минус Technical Debt Ratio", twin:"tdr"}
 ];
 
+// английские единицы и описания накладываются на METRICS до построения интерфейса
+const EN_METRICS = {
+  cycle:   {unit:"h", desc:"median across tasks: time from the task entering In Progress to Closed, that is from picking up the work to completion"},
+  deploy:  {unit:"releases/day", desc:"releases of all services over the period, divided by the number of days in the period"},
+  delivery:{unit:"days", desc:"median across epics: time from the epic entering In Technical Design to Rolling out, the whole path from the start of technical design to rollout"},
+  through: {unit:"tasks/person/mo", desc:"tasks closed in a month, divided by the number of unique assignees"},
+  dxiRaw:  {unit:"score out of 10", desc:"average of 14 numeric questions in the developer survey, each on a 1–10 scale; the question list is in the “What DXI is made of” panel"},
+  flow:    {unit:"score", desc:"survey score; the unit on the dashboard is undefined: maybe a share of time, maybe a frequency, maybe a score"},
+  cli:     {unit:"score", desc:"survey score; the question set and scale are not described on the dashboard, and there is no external benchmark"},
+  csr:     {unit:"switches/person/day", desc:"status switches per person per day; a switch is a task moving into an active status, so the value grows with workflow length"},
+  cfr:     {unit:"%", desc:"share of releases resolved as Failed among all releases in the period; the dashboard tile shows the share of successful releases, here the honest inverse is used; on the DORA scale up to 5% is Elite", mirror:"successful releases"},
+  mttr:    {unit:"min", desc:"MTTR (mean time to recovery), total time to resolve an incident. Reaction time = Jira ticket creation date − actual incident start; resolution time = actual resolution time − ticket creation date. MTTR = median(reaction + resolution) over incidents in a sliding window; if there were no incidents in the window, MTTR = 0. Incidents with negative reaction or resolution time are included, so MTTR can drop below zero"},
+  ber:     {unit:"bugs/1000 lines", desc:"bugs over the period divided by thousands of added lines of code; numerator and denominator are not directly linked: a bug can come from code written earlier"},
+  tdr:     {unit:"%", desc:"share of total delivery time spent on technical epics; no direction set in the index"},
+  roi:     {unit:"ratio", desc:"return on tech-debt investment by the dashboard formula: investment is the share of payroll spent on technical epics, saving is the number of product epics times the drop in average epic cost, ROI = (saving − last quarter's investment) / last quarter's investment. The parameter breakdown is in the “ROI: what actually drives it” panel. The base value is negative (−0.4918), so the deviation is normalized by the base's absolute value"},
+  fdr:     {unit:"epics/mo", desc:"product (non-technical) epics closed per month, not normalized by epic size"},
+  inno:    {unit:"%", desc:"share of time on product (non-technical) epics; by construction exactly 100 minus Technical Debt Ratio"}
+};
+if (EN) for (const m of METRICS) Object.assign(m, EN_METRICS[m.k]);
+
 const DIMS = [
   {k:"speed",   name:"Скорость"},
   {k:"effect",  name:"Эффективность"},
   {k:"quality", name:"Качество"},
   {k:"impact",  name:"Влияние"}
 ];
+if (EN){
+  const dn = {speed:"Speed", effect:"Effectiveness", quality:"Quality", impact:"Impact"};
+  for (const d of DIMS) d.name = dn[d.k];
+}
 
 const M = Object.fromEntries(METRICS.map(m => [m.k, m]));
 for (const d of DIMS){
@@ -412,9 +578,9 @@ function compute(){
 // эпсилон гасит двоичную погрешность, иначе 7,7 × 10 = 76,999... усеклось бы в 7,6
 const cut = (v, dp) => { const f = 10 ** dp; return Math.trunc(v * f + Math.sign(v) * 1e-9) / f; };
 const ru = (v, dp) => Number.isFinite(v)
-  ? cut(v, dp).toLocaleString("ru-RU", {minimumFractionDigits:dp, maximumFractionDigits:dp}) : "н/д";
+  ? cut(v, dp).toLocaleString(LOCALE, {minimumFractionDigits:dp, maximumFractionDigits:dp}) : S.na;
 function pct(v, dp){
-  if (!Number.isFinite(v)) return "н/д";
+  if (!Number.isFinite(v)) return S.na;
   const d = dp === undefined ? (Math.abs(v) >= 1000 ? 0 : 1) : dp;
   return (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), d) + "%";
 }
@@ -424,16 +590,16 @@ const cls = v => !Number.isFinite(v) ? "zeroc" : v > 0.05 ? "pos" : v < -0.05 ? 
 function statusOf(k){
   const x = state[k];
   if (k === "dxiRaw"){
-    if (x >= 8)   return ["ok",   "Elite, топ-10% компаний"];
-    if (x >= 7)   return ["ok",   "High, здоровая организация"];
-    if (x >= 6)   return ["warn", "Medium, зона риска"];
-    return ["bad", "Low, критическая ситуация"];
+    if (x >= 8)   return ["ok",   S.dxiElite];
+    if (x >= 7)   return ["ok",   S.dxiHigh];
+    if (x >= 6)   return ["warn", S.dxiMedium];
+    return ["bad", S.dxiLow];
   }
   if (k === "cfr"){
-    if (x <= 5)   return ["ok",   "DORA Elite, до 5%"];
-    if (x <= 10)  return ["warn", "DORA High, до 10%"];
-    if (x <= 15)  return ["warn", "DORA Medium, до 15%"];
-    return ["bad", "DORA Low, выше 15%"];
+    if (x <= 5)   return ["ok",   S.cfrElite];
+    if (x <= 10)  return ["warn", S.cfrHigh];
+    if (x <= 15)  return ["warn", S.cfrMedium];
+    return ["bad", S.cfrLow];
   }
   return null;
 }
@@ -444,7 +610,7 @@ for (const dim of DIMS){
   const g = document.createElement("div");
   g.className = "group";
   g.innerHTML = `<div class="group-head">
-      <span class="group-name">${dim.name}<span class="group-count">${dim.comp.length} из ${dim.all.length} в индексе</span></span>
+      <span class="group-name">${dim.name}<span class="group-count">${dim.comp.length} ${S.of} ${dim.all.length} ${S.inIndexShort}</span></span>
       <span class="group-dev num" id="gd-${dim.k}">+0,0%</span>
     </div>`;
   for (const k of dim.all){
@@ -452,11 +618,11 @@ for (const dim of DIMS){
     const el = document.createElement("div");
     el.className = "metric" + (m.inIndex ? "" : " off");
     el.title = m.desc;
-    const dirText = m.dir === 1 ? "больше лучше" : m.dir === -1 ? "меньше лучше" : "направление не задано";
+    const dirText = m.dir === 1 ? S.dirUp : m.dir === -1 ? S.dirDown : S.dirNone;
     const badges = [];
-    if (!m.inIndex) badges.push(`<span class="pill off tiny">не входит в индекс</span>`);
-    if (m.oneWave)  badges.push(`<span class="pill off tiny">одна волна опроса</span>`);
-    if (m.flagUnit) badges.push(`<span class="pill off tiny">единица не определена</span>`);
+    if (!m.inIndex) badges.push(`<span class="pill off tiny">${S.notInIndex}</span>`);
+    if (m.oneWave)  badges.push(`<span class="pill off tiny">${S.oneWave}</span>`);
+    if (m.flagUnit) badges.push(`<span class="pill off tiny">${S.unitUndef}</span>`);
     if (m.twin)     badges.push(`<span class="pill off tiny">= 100 − ${M[m.twin].name}</span>`);
     el.innerHTML = `
       <div class="m-top">
@@ -469,10 +635,10 @@ for (const dim of DIMS){
       </div>
       ${m.mirror ? `<div class="m-mirror" id="mm-${k}"></div>` : ""}
       <div class="m-foot">
-        <span class="m-etalon">база <span class="num" id="me-${k}">${ru(m.etalon, m.dp)}</span> ${m.unit} ${badges.join(" ")}${m.scale ? ` <span id="st-${k}"></span>` : ""}</span>
+        <span class="m-etalon">${S.baseWord} <span class="num" id="me-${k}">${ru(m.etalon, m.dp)}</span> ${m.unit} ${badges.join(" ")}${m.scale ? ` <span id="st-${k}"></span>` : ""}</span>
         <span class="m-contrib num" id="mc-${k}"></span>
       </div>
-      <details class="m-how"><summary>как считается</summary><p>${m.desc}</p></details>`;
+      <details class="m-how"><summary>${S.howCalc}</summary><p>${m.desc}</p></details>`;
     g.appendChild(el);
   }
   groupsEl.appendChild(g);
@@ -509,6 +675,16 @@ const RPARAMS = [
   {k:"s",  name:"Средний размер эпика, текущий к прошлому", min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult", guardOnly:true},
   {k:"r",  name:"ФОТ, текущий к прошлому",                  min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult"}
 ];
+if (EN){
+  const rn = {
+    d0:"Share of tech-debt epics, previous quarter",
+    d: "Share of tech-debt epics, current quarter",
+    x: "Closed epics, current vs previous",
+    s: "Average epic size, current vs previous",
+    r: "Payroll, current vs previous"
+  };
+  for (const p of RPARAMS) p.name = rn[p.k];
+}
 const RP = Object.fromEntries(RPARAMS.map(p => [p.k, p.val]));
 // защита от нарезки: в формуле объём поставки x × s вместо числа эпиков x.
 // выключена по умолчанию, потому что так считает реальный дашборд
@@ -524,7 +700,7 @@ const xForRoi = roi => (RP.r + RP.d0 * (1 + roi) / (1 - RP.d)) / (GUARD ? RP.s :
     const d = document.createElement("div");
     d.className = "rparam" + (p.guardOnly ? " inactive" : "");
     if (p.guardOnly) d.id = "rp-row-" + p.k;
-    d.innerHTML = `<div class="rp-top"><span class="rp-lab">${p.name}${p.guardOnly ? ' <span class="pill off tiny" id="rp-s-pill">в формуле дашборда не участвует</span>' : ""}</span><span class="rp-val num" id="rv-${p.k}"></span></div>
+    d.innerHTML = `<div class="rp-top"><span class="rp-lab">${p.name}${p.guardOnly ? ` <span class="pill off tiny" id="rp-s-pill">${S.noFormula}</span>` : ""}</span><span class="rp-val num" id="rv-${p.k}"></span></div>
       <input type="range" id="rin-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.val}" aria-label="${p.name}">`;
     el.appendChild(d);
     d.querySelector("input").addEventListener("input", e => {
@@ -577,6 +753,16 @@ const DXI_Q = [
   ["q1_15 общий опыт за последний месяц",            7.7160],
   ["q1_16 рекомендация друга",                       7.9877]
 ];
+if (EN){
+  const qn = ["q1_2 documentation clarity", "q1_3 speed of solving infrastructure problems",
+    "q1_4 satisfaction with the MR process", "q1_5 code review speed",
+    "q1_6 planning effectiveness", "q1_7 clarity of priorities",
+    "q1_8 satisfaction with testing", "q1_9 ease of getting help from teammates",
+    "q1_10 team communication effectiveness", "q1_11 ease of getting help from other teams",
+    "q1_13 freedom in technical decisions", "q1_14 sense of impact",
+    "q1_15 overall experience over the last month", "q1_16 would recommend to a friend"];
+  DXI_Q.forEach((q, i) => q[0] = qn[i]);
+}
 (function drawQ(){
   const el = document.getElementById("qlist");
   const sorted = [...DXI_Q].sort((a,b) => a[1] - b[1]);
@@ -595,7 +781,7 @@ const DXI_Q = [
   f.style.borderTop = "1px solid var(--line)";
   f.style.marginTop = "6px";
   f.style.paddingTop = "8px";
-  f.innerHTML = `<span class="q-lab" style="color:var(--ink);font-weight:650">Среднее по 14 вопросам</span>
+  f.innerHTML = `<span class="q-lab" style="color:var(--ink);font-weight:650">${S.avg14}</span>
     <span class="qtrack"><i style="width:${(avg/10*100).toFixed(1)}%"></i></span>
     <span class="q-val num" style="color:var(--ink)">${ru(avg,1)}</span>`;
   el.appendChild(f);
@@ -614,17 +800,17 @@ function render(){
     document.getElementById("s-" + dim.k).textContent =
       dim.comp.length === dim.all.length
         ? `${dim.comp.length} ${plural(dim.comp.length)}`
-        : `${dim.comp.length} из ${dim.all.length} метрик`;
+        : `${dim.comp.length} ${S.of} ${dim.all.length} ${S.metricsMany}`;
   }
 
   for (const m of METRICS){
     document.getElementById("mv-" + m.k).innerHTML = ru(state[m.k], m.dp) + `<span class="m-unit">${m.unit}</span>`;
     const c = document.getElementById("mc-" + m.k);
-    c.textContent = m.inIndex ? pct(r.comp[m.k]) : (Number.isFinite(r.comp[m.k]) ? pct(r.comp[m.k]) : "н/д");
+    c.textContent = m.inIndex ? pct(r.comp[m.k]) : (Number.isFinite(r.comp[m.k]) ? pct(r.comp[m.k]) : S.na);
     c.className = "m-contrib num " + (m.inIndex ? cls(r.comp[m.k]) : "zeroc");
     if (m.mirror){
       document.getElementById("mm-" + m.k).innerHTML =
-        `на дашборде показано как <span class="num">${ru(100 - state[m.k], 1)}%</span> ${m.mirror}`;
+        `${S.mirrorPrefix}<span class="num">${ru(100 - state[m.k], 1)}%</span> ${m.mirror}`;
     }
     if (m.scale){
       const [tone, text] = statusOf(m.k);
@@ -640,22 +826,23 @@ function render(){
 
   const diff = r.alt.overall - r.dim.overall;
   document.getElementById("alt-line").innerHTML =
-    `<strong>* Если бы в индекс входили все пятнадцать метрик</strong>, общая продуктивность была бы ` +
-    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 1)}</span> вместо ` +
+    S.altPrefix +
+    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 1)}</span>` + S.altInstead +
     `<span class="num ${cls(r.dim.overall)}">${pct(r.dim.overall, 1)}</span>` +
     (Math.abs(diff) >= 0.005
-        ? `, разница <span class="num">${pct(diff, 1)}</span>. Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.`
+        ? `${S.altDiffA}<span class="num">${pct(diff, 1)}</span>${S.altDiffB}`
         // разница может быть нулевой по двум причинам, и путать их нельзя:
         // серые метрики либо стоят на базе, либо сдвинуты ровно так же, как остальные
         : METRICS.filter(m => !m.inIndex && m.dir !== 0)
                  .every(m => Math.abs(state[m.k] - m.etalon) < 1e-9)
-            ? ". Сейчас разницы нет: серые метрики стоят на своей базе."
-            : ". Разницы нет: серые метрики сдвинуты ровно так же, как остальные.");
+            ? S.altZeroBase
+            : S.altZeroSame);
 
   drawChart(r);
   renderR();
 }
-const plural = n => n === 1 ? "метрика" : n < 5 ? "метрики" : "метрик";
+const plural = n => EN ? (n === 1 ? "metric" : "metrics")
+                       : (n === 1 ? "метрика" : n < 5 ? "метрики" : "метрик");
 
 function drawChart(r){
   const rows = [];
@@ -757,7 +944,7 @@ document.getElementById("setbase").addEventListener("click", () => {
 
 document.getElementById("roi-guard").addEventListener("change", e => {
   GUARD = e.target.checked;
-  document.getElementById("ro-lab").textContent = GUARD ? "ROI с защитой от нарезки" : "ROI по формуле дашборда";
+  document.getElementById("ro-lab").textContent = GUARD ? S.roiGuard : S.roiPlain;
   document.getElementById("rp-row-s").classList.toggle("inactive", !GUARD);
   document.getElementById("rp-s-pill").style.display = GUARD ? "none" : "";
   // формула сменилась: ползунок ROI идёт за новым значением, параметры не трогаем
