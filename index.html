@@ -221,17 +221,17 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
     <div class="tile hero">
       <span class="t-lab">Общая продуктивность</span>
       <span class="t-val num" id="v-overall">0,0%</span>
-      <span class="t-sub">среднее трёх измерений, относительно базы</span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее индексов скорости, качества и ROI. Отклонение: направление × (значение − база) / |база| ×100. При нулевой базе индексной метрики отклонение равно 0. Вес метрики скорости 1/12, качества 1/6, ROI 1/3. Пропуск входной метрики делает индекс недоступным.</div></details>
+      <span class="t-sub">среднее четырёх измерений, относительно базы</span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее индексов скорости, эффективности, качества и ROI. Отклонение: направление × (значение − база) / |база| ×100. При нулевой базе индексной метрики отклонение равно 0. Вес метрики скорости 1/16, качества 1/8, DXI и ROI по 1/4. Пропуск входной метрики делает индекс недоступным.</div></details>
     </div>
     <div class="tile"><span class="t-lab">Скорость</span><span class="t-val num" id="v-speed">0,0%</span><span class="t-sub" id="s-speed"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Cycle Time, Deployment Frequency, Delivery Time и Throughput. Вес каждой метрики в общем индексе 1/12.</div></details></div>
-    <div class="tile"><span class="t-lab">Эффективность</span><span class="t-val num" id="v-effect">вне индекса</span><span class="t-sub" id="s-effect"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Одна волна опроса по всей компании, временного сравнения нет. DXI, Flow State Frequency, Cognitive Load Index и Context Switching Rate имеют вес 0.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Cycle Time, Deployment Frequency, Delivery Time и Throughput. Вес каждой метрики в общем индексе 1/16.</div></details></div>
+    <div class="tile"><span class="t-lab">Эффективность</span><span class="t-val num" id="v-effect">0,0%</span><span class="t-sub" id="s-effect"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Отклонение DXI от выбранной базы, вес 1/4 общего индекса. Изменяйте DXI ползунком, чтобы моделировать рост или снижение эффективности. Flow State Frequency, Cognitive Load Index и Context Switching Rate имеют диагностический вес 0.</div></details></div>
     <div class="tile"><span class="t-lab">Качество</span><span class="t-val num" id="v-quality">0,0%</span><span class="t-sub" id="s-quality"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Change Failure Rate и Bug Escape Rate. Вес каждой метрики 1/6. MTTR исключён. Technical Debt Velocity служит диагностикой с весом 0.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Change Failure Rate и Bug Escape Rate. Вес каждой метрики 1/8. MTTR исключён. Technical Debt Velocity служит диагностикой с весом 0.</div></details></div>
     <div class="tile"><span class="t-lab">Влияние</span><span class="t-val num" id="v-impact">0,0%</span><span class="t-sub" id="s-impact"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Отклонение ROI, вес 1/3 общего индекса. Feature Delivery Rate и Innovation Time имеют вес 0. ROI выражен в процентах.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Отклонение ROI, вес 1/4 общего индекса. Feature Delivery Rate и Innovation Time имеют вес 0. ROI выражен в процентах.</div></details></div>
   </div>
   <p class="alt-line" id="alt-line"></p>
 </section>
@@ -264,9 +264,9 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
 <div class="dxi-block">
   <section class="panel">
     <h2>Из чего складывается DXI</h2>
-    <p class="hint">Средние по 14 вопросам одной волны опроса, шкала 1–10. Профиль статичен: он объясняет, из чего собран балл, а не как он менялся.</p>
+    <p class="hint">Пример средних по 14 вопросам, шкала 1–10. Этот профиль иллюстрирует состав DXI. Ползунок DXI выше моделирует изменение итогового балла независимо от примера.</p>
     <div id="qlist"></div>
-    <p class="note"><strong>Сравнение с мировым бенчмарком.</strong> Мировой бенчмарк DXI это 6,8–7,2. Среднее нашей волны 7,7 выше бенчмарка: категория High, здоровая организация. Шкала категорий: от 8,0 Elite (топ-10% компаний), 7,0–8,0 High (здоровая организация), 6,0–7,0 Medium (зона риска), ниже 6,0 Low (критическая ситуация).</p>
+    <p class="note"><strong>Сравнение с мировым бенчмарком.</strong> Мировой бенчмарк DXI это 6,8–7,2. Средний балл примера 7,7 выше бенчмарка: категория High, здоровая организация. Шкала категорий: от 8,0 Elite (топ-10% компаний), 7,0–8,0 High (здоровая организация), 6,0–7,0 Medium (зона риска), ниже 6,0 Low (критическая ситуация).</p>
   </section>
 </div>
 
@@ -316,7 +316,7 @@ const LOCALE = EN ? "en-US" : "ru-RU";
 const S = EN ? {
   na:"n/a", of:"of", inIndexShort:"in the index", baseWord:"base",
   dirUp:"higher is better", dirDown:"lower is better", dirNone:"no direction set",
-  notInIndex:"not in the index", oneWave:"one survey wave", unitUndef:"unit not defined",
+  notInIndex:"not in the index", unitUndef:"unit not defined",
   howCalc:"how it's measured", metricsMany:"metrics",
   mirrorPrefix:"shown on the dashboard as ",
   noFormula:"not part of the dashboard formula",
@@ -327,7 +327,7 @@ const S = EN ? {
 } : {
   na:"н/д", of:"из", inIndexShort:"в индексе", baseWord:"база",
   dirUp:"больше лучше", dirDown:"меньше лучше", dirNone:"направление не задано",
-  notInIndex:"не входит в индекс", oneWave:"одна волна опроса", unitUndef:"единица не определена",
+  notInIndex:"не входит в индекс", unitUndef:"единица не определена",
   howCalc:"как считается", metricsMany:"метрик",
   mirrorPrefix:"на дашборде показано как ",
   noFormula:"в формуле дашборда не участвует",
@@ -356,21 +356,21 @@ if (EN){
     ['[data-preset="cfrzero"]', "Zero failures"],
     ['[data-preset="epicsplit"]', "Sliced tasks smaller"],
     [".tile.hero .t-lab", "Overall productivity"],
-    [".tile.hero .t-sub", "average of three dimensions, relative to base values"],
+    [".tile.hero .t-sub", "average of four dimensions, relative to base values"],
     [".tile.hero .t-how summary", "what's inside"],
-    [".tile.hero .t-how .pop", "Mean of Speed, Quality and ROI indexes. Deviation: direction × (value − base) / |base| ×100. An index metric with a zero reference has zero deviation. Each speed metric weighs 1/12, quality 1/6, ROI 1/3. A missing input makes the index unavailable."],
+    [".tile.hero .t-how .pop", "Mean of Speed, Effectiveness, Quality and ROI indexes. Deviation: direction × (value − base) / |base| ×100. An index metric with a zero reference has zero deviation. Each speed metric weighs 1/16, quality 1/8, DXI and ROI 1/4 each. A missing input makes the index unavailable."],
     [".readout-grid .tile:nth-child(2) .t-lab", "Speed"],
     [".readout-grid .tile:nth-child(2) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(2) .t-how .pop", "Mean deviations of Cycle Time, Deployment Frequency, Delivery Time and Throughput. Each weighs 1/12 of the overall index."],
+    [".readout-grid .tile:nth-child(2) .t-how .pop", "Mean deviations of Cycle Time, Deployment Frequency, Delivery Time and Throughput. Each weighs 1/16 of the overall index."],
     [".readout-grid .tile:nth-child(3) .t-lab", "Effectiveness"],
     [".readout-grid .tile:nth-child(3) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(3) .t-how .pop", "One company-wide survey wave with no time series. DXI, Flow State Frequency, Cognitive Load Index and Context Switching Rate have weight 0."],
+    [".readout-grid .tile:nth-child(3) .t-how .pop", "DXI deviation from the selected baseline, weighing 1/4 of the overall index. Move the DXI slider to simulate an improvement or decline in Effectiveness. Flow State Frequency, Cognitive Load Index and Context Switching Rate are diagnostic with weight 0."],
     [".readout-grid .tile:nth-child(4) .t-lab", "Quality"],
     [".readout-grid .tile:nth-child(4) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(4) .t-how .pop", "Mean deviations of Change Failure Rate and Bug Escape Rate. Each weighs 1/6. MTTR is excluded. Technical Debt Velocity is diagnostic with weight 0."],
+    [".readout-grid .tile:nth-child(4) .t-how .pop", "Mean deviations of Change Failure Rate and Bug Escape Rate. Each weighs 1/8. MTTR is excluded. Technical Debt Velocity is diagnostic with weight 0."],
     [".readout-grid .tile:nth-child(5) .t-lab", "Impact"],
     [".readout-grid .tile:nth-child(5) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(5) .t-how .pop", "ROI deviation, weighing 1/3 of the overall index. Feature Delivery Rate and Innovation Time have weight 0. ROI is expressed as a percentage."],
+    [".readout-grid .tile:nth-child(5) .t-how .pop", "ROI deviation, weighing 1/4 of the overall index. Feature Delivery Rate and Innovation Time have weight 0. ROI is expressed as a percentage."],
     [".basebar .lbl", "Base"],
     ["#setbase", "Set as base values"],
     [".cols > .panel:nth-child(1) > h2", "Dashboard input metrics"],
@@ -382,8 +382,8 @@ if (EN){
     [".legend span:nth-child(3)", '<i class="sw" style="background:var(--zero);width:2px;height:12px;border-radius:1px"></i>base'],
     [".axis-note", "<span>worse</span><span>base</span><span>better</span>"],
     [".dxi-block .panel > h2", "What DXI is made of"],
-    [".dxi-block .panel > .hint", "Averages of 14 questions from one survey wave, scale 1–10. The profile is static: it explains what the score is made of, not how it changed."],
-    [".dxi-block .panel > .note", "<strong>Against the world benchmark.</strong> The world DXI benchmark is 6.8–7.2. Our wave's average of 7.7 is above the benchmark: category High, a healthy organization. The category scale: above 8.0 Elite (top 10% of companies), 7.0–8.0 High (healthy organization), 6.0–7.0 Medium (risk zone), below 6.0 Low (critical)."],
+    [".dxi-block .panel > .hint", "Example averages for 14 questions on a 1–10 scale. This profile illustrates the composition of DXI. The DXI slider above independently simulates changes to the overall score."],
+    [".dxi-block .panel > .note", "<strong>Against the world benchmark.</strong> The world DXI benchmark is 6.8–7.2. The example's average of 7.7 is above the benchmark: category High, a healthy organization. The category scale: above 8.0 Elite (top 10% of companies), 7.0–8.0 High (healthy organization), 6.0–7.0 Medium (risk zone), below 6.0 Low (critical)."],
     [".roi-block > .panel:nth-child(1) > h2", "ROI: what actually drives it"],
     [".roi-block > .panel:nth-child(1) > .hint", "ROI uses capacity in reference epics: eligible tasks / 7.6158. Move the parameters or set ROI with its slider. Splitting an epic with the same tasks leaves capacity unchanged."],
     ["#ro-lab", "ROI by the dashboard formula"],
@@ -504,6 +504,54 @@ langBtn.addEventListener("click", () => {
 
 /* END MODEL */
 
+/* BEGIN SIMULATION */
+/* Scenario calculations include all four dimensions, independent of survey availability. */
+(function (root) {
+  'use strict';
+  const core = typeof module !== 'undefined' && module.exports
+    ? require('./dx4-simulator-model.js') : root.DX4Model;
+  const definitions = Object.fromEntries(Object.entries(core.definitions).map(([key, metric]) =>
+    [key, {...metric, weight: metric.weight * 3 / 4}]));
+  definitions.dxiRaw.weight = 1 / 4;
+
+  function deviation(key, value, base) {
+    const metric = definitions[key];
+    if (!metric?.survey) return core.deviation(key, value, base);
+    if (!metric.dir || !Number.isFinite(base)) return NaN;
+    if (metric.weight && base === 0) return 0;
+    if (!Number.isFinite(value) || base === 0) return NaN;
+    return metric.dir * (value - base) / Math.abs(base) * 100;
+  }
+
+  function compute(values, bases) {
+    const comp = Object.fromEntries(Object.keys(definitions).map(key =>
+      [key, deviation(key, values[key], bases[key])]));
+    const dim = {};
+    for (const key of ['speed', 'effect', 'quality', 'impact']) {
+      const metrics = Object.keys(definitions).filter(k => definitions[k].dim === key && definitions[k].weight > 0);
+      dim[key] = core.strictMean(metrics.map(k => comp[k]));
+    }
+    dim.overall = core.strictMean([dim.speed, dim.effect, dim.quality, dim.impact]);
+    return {comp, dim};
+  }
+
+  function targetForIndex(key, gainPP, values, bases, dimension = 'overall') {
+    const m = definitions[key];
+    if (!m?.weight || ![gainPP, values[key], bases[key]].every(Number.isFinite) || bases[key] === 0) return null;
+    const weight = dimension === 'overall' ? m.weight : dimension === m.dim ? m.weight * 4 : 0;
+    if (!weight) return null;
+    const raw = values[key] + gainPP * Math.abs(bases[key]) / (100 * m.dir * weight);
+    const value = core.bound(key, raw);
+    return {value, reachable: Math.abs(value - raw) < 1e-9, raw};
+  }
+
+  const api = {...core, definitions, deviation, compute, targetForIndex};
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.DX4Simulation = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* END SIMULATION */
+
 const METRICS = [
   {k:"cycle", etalon:94.5167, min:0, max:200, step:0.1,    dim:"speed",   inIndex:true,  name:"Cycle Time",            unit:"ч",                 dir:-1, dp:1,
    desc:"медиана часов задачи в активных статусах, отбор по дате закрытия"},
@@ -514,11 +562,11 @@ const METRICS = [
   {k:"through", etalon:10.9031, min:0, max:40, step:0.1,  dim:"speed",   inIndex:true,  name:"Throughput",            unit:"задач/чел/мес",     dir:1,  dp:2,
    desc:"успешные задачи / сумму активных человеко-месяцев с учётом доли неполного месяца"},
 
-  {k:"dxiRaw", etalon:7.7337, min:1, max:10, step:0.01,   dim:"effect",  inIndex:false, name:"DXI",                   unit:"балл из 10",        dir:1,  dp:2, scale:"dxi", oneWave:true, survey:true,
-   desc:"среднее 14 вопросов опроса, делитель 14; волна одна, по команде не режется"},
-  {k:"flow", etalon:5.3086, min:0, max:10, step:0.01,     dim:"effect",  inIndex:false, name:"Flow State Frequency",  unit:"балл 0–10",         dir:1,  dp:2, oneWave:true, survey:true,
+  {k:"dxiRaw", etalon:7.7337, min:1, max:10, step:0.01,   dim:"effect",  inIndex:true,  name:"DXI",                   unit:"балл из 10",        dir:1,  dp:2, scale:"dxi", survey:true,
+   desc:"среднее 14 вопросов опроса; отклонение от выбранной базы задаёт индекс эффективности и 1/4 общего индекса"},
+  {k:"flow", etalon:5.3086, min:0, max:10, step:0.01,     dim:"effect",  inIndex:false, name:"Flow State Frequency",  unit:"балл 0–10",         dir:1,  dp:2, survey:true,
    desc:"ответ анкеты перекодирован в балл 0–10, среднее по анкетам"},
-  {k:"cli", etalon:6.3992, min:1, max:10, step:0.01,      dim:"effect",  inIndex:false, name:"Cognitive Load Index",  unit:"балл 1–10",         dir:0,  dp:2, oneWave:true, survey:true,
+  {k:"cli", etalon:6.3992, min:1, max:10, step:0.01,      dim:"effect",  inIndex:false, name:"Cognitive Load Index",  unit:"балл 1–10",         dir:0,  dp:2, survey:true,
    desc:"(нагрузка + сложность контекстов + 11 − адекватность нагрузки) / 3; коридор 4–6"},
   {k:"csr", etalon:1.6433, min:0, max:5, step:0.01,      dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", dir:-1, dp:2,
    desc:"среднее по паре (человек, день) число переходов между разными задачами"},
@@ -556,7 +604,7 @@ const EN_METRICS = {
   },
   "dxiRaw": {
     "unit": "score 1–10",
-    "desc": "Mean of 14 survey questions. One company-wide wave; no team-level trend and no index contribution."
+    "desc": "Mean of 14 survey questions. Its deviation from the selected baseline is the Effectiveness index and contributes 1/4 of the overall index."
   },
   "flow": {
     "unit": "score 0–10",
@@ -609,10 +657,10 @@ if (EN){
 }
 
 for (const m of METRICS) {
-  Object.assign(m, DX4Model.definitions[m.k]);
+  Object.assign(m, DX4Simulation.definitions[m.k]);
   m.inIndex = m.weight > 0;
 }
-for (const d of DIMS) d.inIndex = d.k !== "effect";
+for (const d of DIMS) d.inIndex = true;
 const M = Object.fromEntries(METRICS.map(m => [m.k, m]));
 for (const d of DIMS){
   d.all  = METRICS.filter(m => m.dim === d.k).map(m => m.k);
@@ -622,9 +670,9 @@ const DIM = Object.fromEntries(DIMS.map(d => [d.k, d]));
 const state = Object.fromEntries(METRICS.map(m => [m.k, m.etalon]));
 
 const bases = () => Object.fromEntries(METRICS.map(m => [m.k, m.etalon]));
-const dev = k => DX4Model.deviation(k, state[k], M[k].etalon);
-const mean = DX4Model.strictMean;
-const compute = () => DX4Model.compute(state, bases());
+const dev = k => DX4Simulation.deviation(k, state[k], M[k].etalon);
+const mean = DX4Simulation.strictMean;
+const compute = () => DX4Simulation.compute(state, bases());
 
 /* ---------- форматирование ---------- */
 // отображение усекается в меньшую сторону (к нулю): хвосты сотых и тысячных не показываем.
@@ -674,7 +722,6 @@ for (const dim of DIMS){
     const dirText = m.dir === 1 ? S.dirUp : m.dir === -1 ? S.dirDown : (m.k === "cli" ? (EN ? "target corridor 4–6" : "коридор 4–6") : S.dirNone);
     const badges = [];
     if (!m.inIndex) badges.push(`<span class="pill off tiny">${S.notInIndex}</span>`);
-    if (m.oneWave)  badges.push(`<span class="pill off tiny">${S.oneWave}</span>`);
     if (m.flagUnit) badges.push(`<span class="pill off tiny">${S.unitUndef}</span>`);
     if (m.pp) badges.push(`<span class="pill off tiny">${EN ? "change in pp" : "изменение в п.п."}</span>`);
     el.innerHTML = `
@@ -701,7 +748,7 @@ for (const m of METRICS){
   const inp = document.getElementById("in-" + m.k);
   inp.value = state[m.k];
   inp.addEventListener("input", e => {
-    state[m.k] = DX4Model.bound(m.k, Number(e.target.value));
+    state[m.k] = DX4Simulation.bound(m.k, Number(e.target.value));
     render();
   });
   const p = (m.etalon - m.min) / (m.max - m.min) * 100;
@@ -725,7 +772,7 @@ const RPARAMS = [
   {k:"r", name:EN ? "Payroll / previous payroll" : "ФОТ / ФОТ₀", min:0, max:3, step:0.001, val:1, fmt:"mult"}
 ];
 const RP = Object.fromEntries(RPARAMS.map(p => [p.k, p.val]));
-const roiFrom = () => DX4Model.roiFrom(RP);
+const roiFrom = () => DX4Simulation.roiFrom(RP);
 let roiLinked = true;
 function syncRoiParams(){
   if (Math.abs(roiFrom() - state.roi) < 1e-8) {roiLinked = true; return;}
@@ -762,7 +809,7 @@ function renderR(){
     (EN ? "Manual ROI: incompatible with these parameters" : "Ручной ROI: не согласуется с этими параметрами");
 }
 
-/* ---------- профиль DXI: средние по 14 вопросам одной волны опроса ---------- */
+/* Example DXI question profile, independent of the simulated overall score. */
 const DXI_Q = [
   ["q1_2 понятность документации",                  6.6667],
   ["q1_3 скорость решения инфраструктурных проблем", 6.5926],
@@ -819,12 +866,12 @@ function render(){
 
   for (const [k, id] of [["overall","v-overall"],["speed","v-speed"],["effect","v-effect"],["quality","v-quality"],["impact","v-impact"]]){
     const el = document.getElementById(id);
-    el.textContent = k === "effect" ? (EN ? "outside index" : "вне индекса") : pct(r.dim[k], 1);
+    el.textContent = pct(r.dim[k], 1);
     el.className = "t-val num " + cls(r.dim[k]);
   }
   for (const dim of DIMS){
     document.getElementById("s-" + dim.k).textContent =
-      !dim.inIndex ? (EN ? "survey and diagnostics, weight 0" : "опрос и диагностика, вес 0") : dim.comp.length === dim.all.length
+      dim.comp.length === dim.all.length
         ? `${dim.comp.length} ${plural(dim.comp.length)}`
         : `${dim.comp.length} ${S.of} ${dim.all.length} ${S.metricsMany}`;
   }
@@ -832,7 +879,7 @@ function render(){
   for (const m of METRICS){
     document.getElementById("mv-" + m.k).innerHTML = ru(state[m.k], m.dp) + `<span class="m-unit">${m.unit}</span>`;
     const c = document.getElementById("mc-" + m.k);
-    c.textContent = m.survey ? (EN ? "no time series" : "динамики нет") : fmtDev(m.k, r.comp[m.k]);
+    c.textContent = fmtDev(m.k, r.comp[m.k]);
     c.className = "m-contrib num " + (m.inIndex ? cls(r.comp[m.k]) : "zeroc");
     if (m.mirror){
       document.getElementById("mm-" + m.k).innerHTML =
@@ -853,8 +900,8 @@ function render(){
   const zeros = METRICS.filter(m => m.inIndex && m.etalon === 0).map(m => m.name);
   document.getElementById("alt-line").textContent = zeros.length
     ? (EN ? "Zero reference: deviation is 0 for " : "Нулевая база: отклонение равно 0 для ") + zeros.join(", ")
-    : (EN ? "Seven metrics contribute: speed 1/12 each, quality 1/6 each, ROI 1/3. Survey and diagnostics have weight 0."
-          : "В индексе семь метрик: скорость по 1/12, качество по 1/6, ROI 1/3. Опрос и диагностика имеют вес 0.");
+    : (EN ? "Eight metrics contribute across four dimensions: speed 1/16 each, quality 1/8 each, DXI and ROI 1/4 each. Other diagnostics have weight 0."
+          : "В индексе восемь метрик и четыре измерения: скорость по 1/16, качество по 1/8, DXI и ROI по 1/4. Остальная диагностика имеет вес 0.");
 
   drawChart(r);
   renderR();
@@ -889,7 +936,7 @@ function drawChart(r){
 }
 
 /* ---------- сценарии ---------- */
-const clamp = (m, v) => DX4Model.bound(m.k, v);
+const clamp = (m, v) => DX4Simulation.bound(m.k, v);
 function shift(f, list){                 // f = доля улучшения, отрицательная значит ухудшение
   for (const m of (list || METRICS)){
     if (m.dir === 0) continue;

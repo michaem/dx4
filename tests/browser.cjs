@@ -13,10 +13,21 @@ const near = (a, b) => assert.ok(Number.isFinite(a) && Math.abs(a-b) < 1e-8, `${
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(pathToFileURL(path.resolve(__dirname, '../index.html')).href + '?lang=' + lang);
       assert.deepEqual(errors, []);
-      for (const [name, expected] of Object.entries({reset:0, better10:10, worse10:-10, deploy2x:100/12, dxielite:0, cfrzero:100/6, offonly:0})) {
+      for (const [name, expected] of Object.entries({reset:0, better10:10, worse10:-10, deploy2x:100/16, dxielite:(8.5/7.7337-1)*25, cfrzero:100/8, offonly:0})) {
         const actual = await page.evaluate(name => {applyPreset(name); return compute().dim.overall;}, name);
         near(actual, expected);
       }
+      await page.locator('[data-preset="dxielite"]').click();
+      near(await page.evaluate(() => compute().dim.effect), (8.5/7.7337-1)*100);
+      assert.match(await page.locator('#v-effect').innerText(), /9[,.]9%/);
+      assert.match(await page.locator('#mc-dxiRaw').innerText(), /9[,.]9%/);
+      assert.equal(await page.locator('#in-dxiRaw').isEnabled(), true);
+      await page.locator('#in-dxiRaw').evaluate(el => {el.value = '7'; el.dispatchEvent(new Event('input', {bubbles: true}));});
+      near(await page.evaluate(() => compute().dim.overall), (7/7.7337-1)*25);
+      await page.locator('#setbase').click();
+      near(await page.evaluate(() => compute().dim.effect), 0);
+      near(await page.evaluate(() => compute().dim.overall), 0);
+      await page.goto(pathToFileURL(path.resolve(__dirname, '../index.html')).href + '?lang=' + lang);
       await page.locator('[data-preset="roiplus"]').click();
       near(await page.evaluate(() => state.roi), 15);
       near(await page.evaluate(() => roiFrom()), 15);
