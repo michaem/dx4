@@ -154,8 +154,6 @@ input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; 
 .roi-out{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-top:14px; padding-top:12px; border-top:2px solid var(--line-strong)}
 .roi-out .ro-lab{font-size:13px; font-weight:650}
 .roi-out .ro-val{font-size:24px; font-weight:660}
-.guard-toggle{display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12.5px; color:var(--ink-muted); cursor:pointer}
-.guard-toggle input{margin:2px 0 0; accent-color:var(--accent); cursor:pointer}
 .rparam.inactive .rp-lab,.rparam.inactive .rp-val{color:var(--ink-faint)}
 .rparam.inactive input[type=range]::-webkit-slider-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
 .rparam.inactive input[type=range]::-moz-range-thumb{background:var(--off-ink); box-shadow:0 0 0 1px var(--off-ink)}
@@ -202,6 +200,7 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
   <p class="eyebrow">симулятор · DX Core 4</p>
   <h1>DX Core 4: как входные метрики складываются в индекс</h1>
   <p>Интерактивная модель сводного индекса продуктивности, собранная по реальному дашборду DX Core 4. Здесь можно проверить, как устроена верхняя цифра: какие метрики входят в индекс и с каким весом, как сильно каждый ползунок двигает сводные плитки и какие сценарии поднимают показатели без изменения реальной работы.</p>
+<p id="model-version">Формулы синхронизированы 18.09.2026. Значения учебные, не актуальный срез команд.</p>
 </header>
 
 <div class="controls">
@@ -222,17 +221,17 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
     <div class="tile hero">
       <span class="t-lab">Общая продуктивность</span>
       <span class="t-val num" id="v-overall">0,0%</span>
-      <span class="t-sub">среднее четырёх измерений, относительно базовых значений</span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее четырёх измерений: Скорость, Эффективность, Качество, Влияние. Каждое измерение это среднее отклонений своих индексных метрик, отклонение считается от базы: ±(текущее − база) / |база| × 100, знак задаёт направление метрики («меньше лучше» или «больше лучше»). Вес метрики: 1 / (число индексных метрик измерения) / 4, поэтому DXI и ROI весят по 25% общей цифры, а Cycle Time только 6,25%.</div></details>
+      <span class="t-sub">среднее трёх измерений, относительно базы</span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее индексов скорости, качества и ROI. Отклонение: направление × (значение − база) / |база| ×100. При нулевой базе индексной метрики отклонение равно 0. Вес метрики скорости 1/12, качества 1/6, ROI 1/3. Пропуск входной метрики делает индекс недоступным.</div></details>
     </div>
     <div class="tile"><span class="t-lab">Скорость</span><span class="t-val num" id="v-speed">0,0%</span><span class="t-sub" id="s-speed"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Cycle Time, Deployment Frequency, Delivery Time и Throughput. Все четыре в индексе, каждая весит четверть измерения, то есть 6,25% общей цифры.</div></details></div>
-    <div class="tile"><span class="t-lab">Эффективность</span><span class="t-val num" id="v-effect">0,0%</span><span class="t-sub" id="s-effect"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Из четырёх метрик раздела в индексе только DXI: плитка равна его отклонению, вес 25% общей цифры. Flow State Frequency, Cognitive Load Index и Context Switching Rate показаны серым и на индекс не влияют.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Cycle Time, Deployment Frequency, Delivery Time и Throughput. Вес каждой метрики в общем индексе 1/12.</div></details></div>
+    <div class="tile"><span class="t-lab">Эффективность</span><span class="t-val num" id="v-effect">вне индекса</span><span class="t-sub" id="s-effect"></span>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Одна волна опроса по всей компании, временного сравнения нет. DXI, Flow State Frequency, Cognitive Load Index и Context Switching Rate имеют вес 0.</div></details></div>
     <div class="tile"><span class="t-lab">Качество</span><span class="t-val num" id="v-quality">0,0%</span><span class="t-sub" id="s-quality"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Change Failure Rate, MTTR и Bug Escape Rate, каждая весит 8,33% общей цифры. Technical Debt Ratio в индекс не входит: направление метрики не задано.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Среднее отклонений Change Failure Rate и Bug Escape Rate. Вес каждой метрики 1/6. MTTR исключён. Technical Debt Velocity служит диагностикой с весом 0.</div></details></div>
     <div class="tile"><span class="t-lab">Влияние</span><span class="t-val num" id="v-impact">0,0%</span><span class="t-sub" id="s-impact"></span>
-      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Из трёх метрик раздела в индексе только ROI: плитка равна его отклонению, вес 25% общей цифры. Feature Delivery Rate и Innovation Time в индекс не входят.</div></details></div>
+      <details class="t-how"><summary>из чего складывается</summary><div class="pop">Отклонение ROI, вес 1/3 общего индекса. Feature Delivery Rate и Innovation Time имеют вес 0. ROI выражен в процентах.</div></details></div>
   </div>
   <p class="alt-line" id="alt-line"></p>
 </section>
@@ -274,50 +273,26 @@ tr.total td{font-weight:680; border-top:2px solid var(--line-strong); border-bot
 <div class="roi-block">
   <section class="panel">
     <h2>ROI: что им на самом деле управляет</h2>
-    <p class="hint">Формула дашборда, разложенная до входных величин. Двигайте параметры: ползунок ROI наверху идёт следом, и наоборот. Тумблер защиты подставляет в формулу объём поставки вместо числа эпиков, и нарезка перестаёт влиять на ROI.</p>
+    <p class="hint">ROI рассчитывается по мощности в эталонных эпиках: учитываемые задачи ÷ 7,6158. Двигайте параметры или задайте ROI ползунком. Разделение эпика при том же составе задач не меняет мощность.</p>
     <div id="rparams"></div>
-    <label class="guard-toggle"><input type="checkbox" id="roi-guard"><span>Формула с защитой от нарезки: вместо числа эпиков объём поставки (число × средний размер эпика)</span></label>
-    <div class="roi-out">
-      <span class="ro-lab" id="ro-lab">ROI по формуле дашборда</span>
-      <span class="ro-val num" id="roi-out">−0,4</span>
-    </div>
-    <p class="note"><strong>Как читать.</strong> Параметры заданы в отношениях к прошлому кварталу, потому что после сокращения формулы абсолютные рубли из неё уходят. Значения по умолчанию подобраны так, чтобы воспроизвести базовое значение −0,4918.</p>
+    <div class="roi-out"><span class="ro-lab" id="ro-lab">ROI по формуле дашборда</span><span class="ro-val num" id="roi-out">−49,1%</span></div>
+    <p class="note"><strong>Как читать.</strong> Учебный пример одного квартала, база −49,18%. На дашборде усредняются квартальные ROI, включая открытый квартал. Нулевая доля техработы в прошлом квартале даёт ROI 0.</p>
   </section>
-
   <section class="panel">
     <h2>Что из этого следует</h2>
-    <p class="hint">Формула дашборда сокращается до четырёх величин, и денег среди них нет.</p>
-    <div class="formula">invest    = tech_epics × ФОТ / total_epics
-saving    = prod_epics × (стоимость_эпика₀ − стоимость_эпика)
-ROI       = (saving − invest₀) / invest₀
+    <p class="hint">Мощность зависит от числа учитываемых задач, приведённых к постоянному размеру эталонного эпика.</p>
+    <div class="formula">T = учитываемые задачи / 7,6158 (эталонные эпики)
+invest = d × ФОТ
+saving = (1 − d) × T × (ФОТ₀/T₀ − ФОТ/T)
+ROI, % = ((1 − d) × (T/T₀ − r) − d₀) / d₀ ×100
 
-после сокращения:
-ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀
-
-d, d₀ = доля техдолговых эпиков сейчас и в прошлом квартале
-T/T₀  = во сколько раз изменилось число закрытых эпиков
-r     = во сколько раз изменился ФОТ
-
-с защитой от нарезки:
-ROI = ((1 − d) × (T/T₀ × s − r) − d₀) / d₀
-
-s     = во сколько раз изменился средний размер эпика:
-        при нарезке T растёт, s падает, T × s стоит на месте</div>
-    <div class="tw" style="margin-top:14px">
-      <table>
-        <thead><tr><th>Что делает команда</th><th>Что делает ROI</th></tr></thead>
-        <tbody>
-          <tr><td>Ничего не изменилось: те же эпики, тот же ФОТ</td><td class="neg">ровно −100%</td></tr>
-          <tr><td>Нарезала те же задачи на вдвое большее число эпиков</td><td class="pos">резко вверх</td></tr>
-          <tr><td>Вложила в техдолг больше <em>в прошлом</em> квартале</td><td class="neg">вниз</td></tr>
-          <tr><td>Вкладывает в техдолг больше <em>сейчас</em></td><td class="neg">вниз</td></tr>
-          <tr><td>Наняла людей, ФОТ вырос</td><td class="neg">вниз</td></tr>
-          <tr><td>Реально ускорила поставку без роста числа эпиков</td><td class="zeroc">не меняется</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="note"><strong>Главное.</strong> Метрика продаётся как отдача от вложений в технический долг, но устроена так, что штрафует и за прошлые вложения (они в знаменателе), и за текущие (множитель 1&nbsp;−&nbsp;d). Самый быстрый способ поднять ROI это перестать заниматься техдолгом и нарезать те же задачи на большее число эпиков. Тумблер «защита от нарезки» показывает починку: формула считает объём поставки, и дробление перестаёт работать. Throughput и Feature Delivery Rate этой защитой не закрыты: они по-прежнему считают штуки.</p>
-    <p class="note"><strong>Две разные доли техдолга.</strong> Внутри ROI доля считается по количеству эпиков, а плитка Technical Debt Ratio в разделе «Качество» считает долю по сумме delivery time. Это две разные величины с одним названием, поэтому связать их напрямую нельзя, пока не выбрана одна база.</p>
+d, d₀ = доля техработы сейчас и в прошлом квартале
+r = ФОТ / ФОТ₀
+при d₀ = 0: ROI = 0
+период: среднее квартальных ROI, включая открытый квартал</div>
+    <div class="tw" style="margin-top:14px"><table><thead><tr><th>Что делает команда</th><th>Что делает ROI</th></tr></thead><tbody><tr><td>Мощность и ФОТ не изменились, d₀ &gt; 0</td><td class="neg">ROI −100%</td></tr><tr><td>Тот же набор задач разложили по большему числу эпиков</td><td>ROI и FDR не меняются</td></tr><tr><td>Ту же работу разбили на большее число учитываемых задач</td><td>Мощность, ROI, FDR и Throughput растут</td></tr><tr><td>ФОТ вырос при той же мощности</td><td class="neg">ROI снижается</td></tr></tbody></table></div>
+    <p class="note"><strong>Сценарий нарезки.</strong> Число учитываемых задач растёт на 50%, мощность, FDR и Throughput растут вместе с ним. Реальный объём работы в этом примере не меняется.</p>
+    <p class="note"><strong>Разные показатели.</strong> Доля техработы внутри ROI, Technical Debt Velocity и Innovation Time считаются по разным величинам. Между ними нет тождества «100 минус».</p>
   </section>
 </div>
 
@@ -346,17 +321,9 @@ const S = EN ? {
   mirrorPrefix:"shown on the dashboard as ",
   noFormula:"not part of the dashboard formula",
   avg14:"Average of 14 questions",
-  roiPlain:"ROI by the dashboard formula", roiGuard:"ROI with slicing protection",
-  altPrefix:"<strong>* If the index included all fifteen metrics</strong>, overall productivity would be ",
-  altInstead:" instead of ",
-  altDiffA:", a difference of ",
-  altDiffB:". But you must not do this: an index recomposed after the fact breaks comparability with past measurements and turns the metric into cherry-picking components for the number you want.",
-  altZeroBase:". Right now there is no difference: the grey metrics sit at their base values.",
-  altZeroSame:". No difference: the grey metrics are shifted exactly like the rest.",
+  roiPlain:"ROI by the dashboard formula",
   dxiElite:"Elite, top 10% of companies", dxiHigh:"High, healthy organization",
   dxiMedium:"Medium, risk zone", dxiLow:"Low, critical",
-  cfrElite:"DORA Elite, under 5%", cfrHigh:"DORA High, under 10%",
-  cfrMedium:"DORA Medium, under 15%", cfrLow:"DORA Low, above 15%"
 } : {
   na:"н/д", of:"из", inIndexShort:"в индексе", baseWord:"база",
   dirUp:"больше лучше", dirDown:"меньше лучше", dirNone:"направление не задано",
@@ -365,17 +332,9 @@ const S = EN ? {
   mirrorPrefix:"на дашборде показано как ",
   noFormula:"в формуле дашборда не участвует",
   avg14:"Среднее по 14 вопросам",
-  roiPlain:"ROI по формуле дашборда", roiGuard:"ROI с защитой от нарезки",
-  altPrefix:"<strong>* Если бы в индекс входили все пятнадцать метрик</strong>, общая продуктивность была бы ",
-  altInstead:" вместо ",
-  altDiffA:", разница ",
-  altDiffB:". Но так делать нельзя: состав индекса, пересобранный задним числом, ломает сравнимость с прошлыми замерами и превращает метрику в подбор компонентов под желаемую цифру.",
-  altZeroBase:". Сейчас разницы нет: серые метрики стоят на своей базе.",
-  altZeroSame:". Разницы нет: серые метрики сдвинуты ровно так же, как остальные.",
+  roiPlain:"ROI по формуле дашборда",
   dxiElite:"Elite, топ-10% компаний", dxiHigh:"High, здоровая организация",
   dxiMedium:"Medium, зона риска", dxiLow:"Low, критическая ситуация",
-  cfrElite:"DORA Elite, до 5%", cfrHigh:"DORA High, до 10%",
-  cfrMedium:"DORA Medium, до 15%", cfrLow:"DORA Low, выше 15%"
 };
 
 if (EN){
@@ -383,6 +342,7 @@ if (EN){
   document.title = "DX Core 4: metrics simulator";
   document.querySelector(".readout").setAttribute("aria-label", "Summary indexes");
   const H = [
+    ["#model-version", "Formulas synchronized on 2026-09-18. Values are teaching examples, not a current team snapshot."],
     ["header.masthead .eyebrow", "simulator · DX Core 4"],
     ["header.masthead h1", "DX Core 4: how input metrics become the index"],
     ["header.masthead p:not(.eyebrow)", "An interactive model of a composite productivity index, built from a real DX Core 4 dashboard. Use it to see how the headline number works: which metrics enter the index and with what weight, how strongly each slider moves the summary tiles, and which scenarios inflate the numbers without changing any real work."],
@@ -396,21 +356,21 @@ if (EN){
     ['[data-preset="cfrzero"]', "Zero failures"],
     ['[data-preset="epicsplit"]', "Sliced tasks smaller"],
     [".tile.hero .t-lab", "Overall productivity"],
-    [".tile.hero .t-sub", "average of the four dimensions, relative to base values"],
+    [".tile.hero .t-sub", "average of three dimensions, relative to base values"],
     [".tile.hero .t-how summary", "what's inside"],
-    [".tile.hero .t-how .pop", "The average of four dimensions: Speed, Effectiveness, Quality, Impact. Each dimension is the average of its index metrics' deviations; a deviation is measured from the base: ±(current − base) / |base| × 100, with the sign set by the metric's direction (“lower is better” or “higher is better”). A metric's weight is 1 / (number of index metrics in the dimension) / 4, so DXI and ROI each weigh 25% of the headline number, while Cycle Time only 6.25%."],
+    [".tile.hero .t-how .pop", "Mean of Speed, Quality and ROI indexes. Deviation: direction × (value − base) / |base| ×100. An index metric with a zero reference has zero deviation. Each speed metric weighs 1/12, quality 1/6, ROI 1/3. A missing input makes the index unavailable."],
     [".readout-grid .tile:nth-child(2) .t-lab", "Speed"],
     [".readout-grid .tile:nth-child(2) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(2) .t-how .pop", "The average deviation of Cycle Time, Deployment Frequency, Delivery Time and Throughput. All four are in the index; each weighs a quarter of the dimension, that is 6.25% of the headline number."],
+    [".readout-grid .tile:nth-child(2) .t-how .pop", "Mean deviations of Cycle Time, Deployment Frequency, Delivery Time and Throughput. Each weighs 1/12 of the overall index."],
     [".readout-grid .tile:nth-child(3) .t-lab", "Effectiveness"],
     [".readout-grid .tile:nth-child(3) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(3) .t-how .pop", "Of the four metrics in this section only DXI is in the index: the tile equals its deviation, weighing 25% of the headline number. Flow State Frequency, Cognitive Load Index and Context Switching Rate are shown in grey and do not affect the index."],
+    [".readout-grid .tile:nth-child(3) .t-how .pop", "One company-wide survey wave with no time series. DXI, Flow State Frequency, Cognitive Load Index and Context Switching Rate have weight 0."],
     [".readout-grid .tile:nth-child(4) .t-lab", "Quality"],
     [".readout-grid .tile:nth-child(4) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(4) .t-how .pop", "The average deviation of Change Failure Rate, MTTR and Bug Escape Rate, each weighing 8.33% of the headline number. Technical Debt Ratio is not in the index: the metric's direction is not set."],
+    [".readout-grid .tile:nth-child(4) .t-how .pop", "Mean deviations of Change Failure Rate and Bug Escape Rate. Each weighs 1/6. MTTR is excluded. Technical Debt Velocity is diagnostic with weight 0."],
     [".readout-grid .tile:nth-child(5) .t-lab", "Impact"],
     [".readout-grid .tile:nth-child(5) .t-how summary", "what's inside"],
-    [".readout-grid .tile:nth-child(5) .t-how .pop", "Of the three metrics in this section only ROI is in the index: the tile equals its deviation, weighing 25% of the headline number. Feature Delivery Rate and Innovation Time are not in the index."],
+    [".readout-grid .tile:nth-child(5) .t-how .pop", "ROI deviation, weighing 1/3 of the overall index. Feature Delivery Rate and Innovation Time have weight 0. ROI is expressed as a percentage."],
     [".basebar .lbl", "Base"],
     ["#setbase", "Set as base values"],
     [".cols > .panel:nth-child(1) > h2", "Dashboard input metrics"],
@@ -425,38 +385,22 @@ if (EN){
     [".dxi-block .panel > .hint", "Averages of 14 questions from one survey wave, scale 1–10. The profile is static: it explains what the score is made of, not how it changed."],
     [".dxi-block .panel > .note", "<strong>Against the world benchmark.</strong> The world DXI benchmark is 6.8–7.2. Our wave's average of 7.7 is above the benchmark: category High, a healthy organization. The category scale: above 8.0 Elite (top 10% of companies), 7.0–8.0 High (healthy organization), 6.0–7.0 Medium (risk zone), below 6.0 Low (critical)."],
     [".roi-block > .panel:nth-child(1) > h2", "ROI: what actually drives it"],
-    [".roi-block > .panel:nth-child(1) > .hint", "The dashboard formula unfolded into its input values. Move the parameters: the ROI slider above follows, and vice versa. The protection toggle puts delivery volume into the formula instead of epic count, and slicing stops affecting ROI."],
-    [".guard-toggle span", "Slicing-protected formula: delivery volume instead of epic count (count × average epic size)"],
+    [".roi-block > .panel:nth-child(1) > .hint", "ROI uses capacity in reference epics: eligible tasks / 7.6158. Move the parameters or set ROI with its slider. Splitting an epic with the same tasks leaves capacity unchanged."],
     ["#ro-lab", "ROI by the dashboard formula"],
-    [".roi-block > .panel:nth-child(1) > .note", "<strong>How to read this.</strong> Parameters are set as ratios to the previous quarter, because after the formula simplifies, absolute money drops out of it. The defaults are chosen to reproduce the base value of −0.4918."],
+    [".roi-block > .panel:nth-child(1) > .note", "<strong>How to read this.</strong> A single-quarter teaching example with base ROI −49.18%. The dashboard averages quarterly ROI, including the open quarter. Zero technical-work share in the previous quarter gives ROI 0."],
     [".roi-block > .panel:nth-child(2) > h2", "What follows from this"],
-    [".roi-block > .panel:nth-child(2) > .hint", "The dashboard formula reduces to four values, and money is not among them."],
+    [".roi-block > .panel:nth-child(2) > .hint", "Capacity depends on eligible task counts normalized by a fixed reference epic size."],
     [".roi-block > .panel:nth-child(2) thead tr", "<th>What the team does</th><th>What ROI does</th>"],
-    [".roi-block > .panel:nth-child(2) tbody", '<tr><td>Nothing changed: same epics, same payroll</td><td class="neg">exactly −100%</td></tr><tr><td>Sliced the same work into twice as many epics</td><td class="pos">sharply up</td></tr><tr><td>Invested more in tech debt <em>last</em> quarter</td><td class="neg">down</td></tr><tr><td>Invests more in tech debt <em>now</em></td><td class="neg">down</td></tr><tr><td>Hired people, payroll grew</td><td class="neg">down</td></tr><tr><td>Actually sped up delivery without more epics</td><td class="zeroc">no change</td></tr>'],
-    [".roi-block > .panel:nth-child(2) .note", "<strong>The point.</strong> The metric is sold as return on tech-debt investment, but it is built to punish both past investment (it sits in the denominator) and current investment (the 1 − d multiplier). The fastest way to raise ROI is to stop working on tech debt and slice the same work into more epics. The “slicing protection” toggle shows the fix: the formula counts delivery volume, and splitting stops working. Throughput and Feature Delivery Rate are not covered by this protection: they still count pieces."],
-    [".roi-block > .panel:nth-child(2) .note + .note", "<strong>Two different tech-debt shares.</strong> Inside ROI the share is computed from epic counts, while the Technical Debt Ratio tile in the Quality section computes the share from total delivery time. These are two different values with the same name, so they cannot be linked directly until a single base is chosen."]
+    [".roi-block > .panel:nth-child(2) tbody", "<tr><td>Capacity and payroll unchanged, d₀ &gt; 0</td><td class=\"neg\">ROI −100%</td></tr><tr><td>Same tasks regrouped into more epics</td><td>ROI and FDR unchanged</td></tr><tr><td>Same work split into more eligible tasks</td><td>Capacity, ROI, FDR and Throughput rise</td></tr><tr><td>Higher payroll, same capacity</td><td class=\"neg\">ROI falls</td></tr>"],
+    [".roi-block > .panel:nth-child(2) .note", "<strong>Slicing scenario.</strong> Eligible task count rises by 50%; capacity, FDR and Throughput rise with it. The actual amount of work stays unchanged in this example."],
+    [".roi-block > .panel:nth-child(2) .note + .note", "<strong>Different measures.</strong> The technical-work share in ROI, Technical Debt Velocity and Innovation Time use different inputs. None is automatically 100 minus another."]
   ];
   for (const [sel, html] of H){
     const el = document.querySelector(sel);
     if (el) el.innerHTML = html;
   }
   document.querySelector(".formula").textContent =
-`invest    = tech_epics × payroll / total_epics
-saving    = prod_epics × (epic_cost₀ − epic_cost)
-ROI       = (saving − invest₀) / invest₀
-
-after simplification:
-ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀
-
-d, d₀ = share of tech-debt epics now and in the previous quarter
-T/T₀  = ratio of closed epic counts
-r     = ratio of payroll
-
-with slicing protection:
-ROI = ((1 − d) × (T/T₀ × s − r) − d₀) / d₀
-
-s     = ratio of average epic size:
-        with slicing T grows, s falls, T × s stays put`;
+"T = eligible tasks / 7.6158 (reference epics)\ninvest = d × payroll\nsaving = (1 − d) × T × (payroll₀/T₀ − payroll/T)\nROI, % = ((1 − d) × (T/T₀ − r) − d₀) / d₀ ×100\n\nd, d₀ = technical-work share now and in the previous quarter\nr = payroll / payroll₀\nwhen d₀ = 0: ROI = 0\nperiod: mean quarterly ROI, including the open quarter";
 }
 
 const langBtn = document.getElementById("lang-btn");
@@ -470,59 +414,186 @@ langBtn.addEventListener("click", () => {
 /* ---------- модель ----------
    inIndex: входит ли метрика в сводную плитку своего измерения.
    dir: +1 больше лучше, −1 меньше лучше, 0 направление на дашборде не задано.  */
+/* BEGIN MODEL */
+/* Pure calculations. Embedded into the standalone HTML by bin/build-dx4-simulator.mjs. */
+(function (root) {
+  "use strict";
+  const definitions = {
+    cycle: {dir:-1, dim:"speed", weight:1/12},
+    deploy: {dir:1, dim:"speed", weight:1/12},
+    delivery: {dir:-1, dim:"speed", weight:1/12},
+    through: {dir:1, dim:"speed", weight:1/12},
+    cfr: {dir:-1, dim:"quality", weight:1/6},
+    ber: {dir:-1, dim:"quality", weight:1/6},
+    roi: {dir:1, dim:"impact", weight:1/3},
+    dxiRaw: {dir:1, dim:"effect", weight:0, survey:true},
+    flow: {dir:1, dim:"effect", weight:0, survey:true},
+    cli: {dir:0, dim:"effect", weight:0, survey:true},
+    csr: {dir:-1, dim:"effect", weight:0},
+    tdv: {dir:-1, dim:"quality", weight:0, pp:true},
+    fdr: {dir:1, dim:"impact", weight:0},
+    inno: {dir:1, dim:"impact", weight:0}
+  };
+  const finite = Number.isFinite;
+  const strictMean = xs => xs.length && xs.every(finite) ? xs.reduce((a,b)=>a+b,0)/xs.length : NaN;
+  function deviation(key, value, base) {
+    const m = definitions[key];
+    if (!m || !m.dir || !finite(base) || m.survey) return NaN;
+    // Common explicitly returns zero for a zero reference, before checking the value.
+    if (m.weight && base === 0) return 0;
+    if (!finite(value)) return NaN;
+    if (m.pp) return m.dir * (value-base);
+    if (base === 0) return NaN;
+    return m.dir * (value-base) / Math.abs(base) * 100;
+  }
+  function compute(values, bases) {
+    const comp = Object.fromEntries(Object.keys(definitions).map(k=>[k,deviation(k,values[k],bases[k])]));
+    const dim = {
+      speed:strictMean([comp.cycle,comp.deploy,comp.delivery,comp.through]),
+      quality:strictMean([comp.cfr,comp.ber]), impact:comp.roi, effect:NaN
+    };
+    dim.overall = strictMean([dim.speed,dim.quality,dim.impact]);
+    return {comp,dim};
+  }
+  function bound(key,value) {
+    if (!finite(value)) return null;
+    if (key === "roi") return value;
+    if (key === "tdv") return Math.min(100,value);
+    if (["dxiRaw","cli"].includes(key)) return Math.max(1,Math.min(10,value));
+    if (key === "flow") return Math.max(0,Math.min(10,value));
+    if (["cfr","ber","inno"].includes(key)) return Math.max(0,Math.min(100,value));
+    return Math.max(0,value);
+  }
+  function improve(values,fraction,keys=Object.keys(definitions)) {
+    const next={...values};
+    for(const k of keys){const m=definitions[k];if(m.dir && finite(values[k]))next[k]=bound(k,values[k]+m.dir*Math.abs(values[k])*fraction);}
+    return next;
+  }
+  function roiFrom({d0,d,x,r}) {
+    if (![d0,d,x,r].every(finite) || d0<0 || d0>1 || d<0 || d>1 || x<0 || r<0) return NaN;
+    return d0===0 ? 0 : ((1-d)*(x-r)-d0)/d0*100;
+  }
+  function targetForIndex(key, gainPP, values, bases, dimension="overall") {
+    const m=definitions[key];
+    if (!m?.weight || !finite(values[key]) || !finite(bases[key]) || bases[key]===0 || !finite(gainPP)) return null;
+    const w=dimension==="overall" ? m.weight : dimension===m.dim ? m.weight*3 : 0;
+    if (!w) return null;
+    const raw=values[key]+gainPP*Math.abs(bases[key])/(100*m.dir*w);
+    return {value:bound(key,raw),reachable:Math.abs(bound(key,raw)-raw)<1e-9,raw};
+  }
+  function ratePercent(numerator, denominator) {
+    if (![numerator,denominator].every(finite) || numerator<0 || denominator<=0 || numerator>denominator) return null;
+    return numerator/denominator*100;
+  }
+  function qualityTarget(values, targets) {
+    const next={...values};
+    for (const k of ['cfr','ber']) {
+      if (finite(values[k]) && finite(targets[k])) next[k]=Math.min(values[k],bound(k,targets[k]));
+    }
+    return next;
+  }
+  function eventBudget(currentEvents,currentTotal,futureTotal,targetPercent) {
+    if (![currentEvents,currentTotal,futureTotal].every(Number.isInteger) || currentEvents<0 || currentTotal<currentEvents || futureTotal<0 || !finite(targetPercent) || targetPercent<0 || targetPercent>100) return null;
+    const maxNewEvents=Math.floor(targetPercent/100*(currentTotal+futureTotal)+1e-9)-currentEvents;
+    return {futureTotal,maxNewEvents,possible:maxNewEvents>=0,futureRateLimit:futureTotal>0?maxNewEvents/futureTotal*100:null};
+  }
+  const api={definitions,strictMean,deviation,compute,bound,improve,roiFrom,targetForIndex,ratePercent,qualityTarget,eventBudget};
+  if (typeof module !== "undefined" && module.exports) module.exports=api;
+  else root.DX4Model=api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+/* END MODEL */
+
 const METRICS = [
-  {k:"cycle",   dim:"speed",   inIndex:true,  name:"Cycle Time",           unit:"ч",              etalon:94.5167, min:40,  max:180, step:0.5,  dir:-1, dp:0,
-   desc:"медиана по задачам: время от перехода задачи в статус In Progress до Closed, то есть от взятия в работу до закрытия"},
-  {k:"deploy",  dim:"speed",   inIndex:true,  name:"Deployment Frequency", unit:"релизов/день",   etalon:9.1304,  min:1,   max:30,  step:0.1,  dir:1,  dp:0,
-   desc:"число релизов всех сервисов за период, делённое на число дней периода"},
-  {k:"delivery",dim:"speed",   inIndex:true,  name:"Delivery Time",        unit:"дней",           etalon:15.9767, min:5,   max:45,  step:0.1,  dir:-1, dp:0,
-   desc:"медиана по эпикам: время от входа эпика в статус In Technical Design до Rolling out, то есть весь путь от начала технической проработки до раскатки"},
-  {k:"through", dim:"speed",   inIndex:true,  name:"Throughput",           unit:"задач/чел/мес",  etalon:10.9031, min:2,   max:30,  step:0.1,  dir:1,  dp:0,
-   desc:"закрытые за месяц задачи, делённые на число уникальных исполнителей"},
+  {k:"cycle", etalon:94.5167, min:0, max:200, step:0.1,    dim:"speed",   inIndex:true,  name:"Cycle Time",            unit:"ч",                 dir:-1, dp:1,
+   desc:"медиана часов задачи в активных статусах, отбор по дате закрытия"},
+  {k:"deploy", etalon:9.1304, min:0, max:30, step:0.1,   dim:"speed",   inIndex:true,  name:"Deployment Frequency",  unit:"релизов в день",    dir:1,  dp:2,
+   desc:"состоявшиеся выкатки по релизным тикетам, делённые на дни окна; у команды по участию её задач в релизе"},
+  {k:"delivery", etalon:15.9767, min:0, max:50, step:0.1, dim:"speed",   inIndex:true,  name:"Delivery Time",         unit:"дней",              dir:-1, dp:2,
+   desc:"медиана дней в активных статусах эпика до зачтённой поставки; RM по Rolling Out / Delivered / успешному Closed"},
+  {k:"through", etalon:10.9031, min:0, max:40, step:0.1,  dim:"speed",   inIndex:true,  name:"Throughput",            unit:"задач/чел/мес",     dir:1,  dp:2,
+   desc:"успешные задачи / сумму активных человеко-месяцев с учётом доли неполного месяца"},
 
-  {k:"dxiRaw",  dim:"effect",  inIndex:true,  name:"DXI",                  unit:"балл из 10",     etalon:7.7337,  min:4,   max:10,  step:0.01, dir:1,  dp:1,
-   desc:"среднее по 14 числовым вопросам опроса разработчиков, каждый вопрос по шкале от 1 до 10; состав вопросов в панели «Из чего складывается DXI»", scale:"dxi"},
-  {k:"flow",    dim:"effect",  inIndex:false, name:"Flow State Frequency", unit:"балл",           etalon:5.3086,  min:1,   max:10,  step:0.05, dir:1,  dp:1,
-   desc:"балл из опроса; единица измерения на дашборде не определена: то ли процент времени, то ли частота, то ли балл", flagUnit:true, oneWave:true},
-  {k:"cli",     dim:"effect",  inIndex:false, name:"Cognitive Load Index", unit:"балл",           etalon:6.3992,  min:1,   max:10,  step:0.05, dir:-1, dp:1,
-   desc:"балл из опроса; состав вопросов и шкала на дашборде не описаны, внешнего ориентира нет", flagUnit:true, oneWave:true},
-  {k:"csr",     dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", etalon:1.6433, min:0.5, max:5, step:0.01, dir:-1, dp:1,
-   desc:"число переключений на человека в день; переключением считается перевод задачи в активный статус, поэтому значение растёт с длиной workflow"},
+  {k:"dxiRaw", etalon:7.7337, min:1, max:10, step:0.01,   dim:"effect",  inIndex:false, name:"DXI",                   unit:"балл из 10",        dir:1,  dp:2, scale:"dxi", oneWave:true, survey:true,
+   desc:"среднее 14 вопросов опроса, делитель 14; волна одна, по команде не режется"},
+  {k:"flow", etalon:5.3086, min:0, max:10, step:0.01,     dim:"effect",  inIndex:false, name:"Flow State Frequency",  unit:"балл 0–10",         dir:1,  dp:2, oneWave:true, survey:true,
+   desc:"ответ анкеты перекодирован в балл 0–10, среднее по анкетам"},
+  {k:"cli", etalon:6.3992, min:1, max:10, step:0.01,      dim:"effect",  inIndex:false, name:"Cognitive Load Index",  unit:"балл 1–10",         dir:0,  dp:2, oneWave:true, survey:true,
+   desc:"(нагрузка + сложность контекстов + 11 − адекватность нагрузки) / 3; коридор 4–6"},
+  {k:"csr", etalon:1.6433, min:0, max:5, step:0.01,      dim:"effect",  inIndex:false, name:"Context Switching Rate", unit:"перекл./чел/день", dir:-1, dp:2,
+   desc:"среднее по паре (человек, день) число переходов между разными задачами"},
 
-  {k:"cfr",     dim:"quality", inIndex:true,  name:"Change Failure Rate",  unit:"%",              etalon:1.4484,  min:0,   max:12,  step:0.05, dir:-1, dp:1,
-   desc:"доля релизов с резолюцией Failed среди всех релизов за период; на дашборде плитка показывает долю успешных релизов, здесь взята честная обратная величина; по шкале DORA до 5% это Elite", scale:"cfr", mirror:"успешных релизов"},
-  {k:"mttr",    dim:"quality", inIndex:true,  name:"MTTR",                 unit:"минут",          etalon:76,      min:10,  max:300, step:1,    dir:-1, dp:0,
-   desc:"MTTR (mean time to recovery), общее время устранения инцидента. Время реакции = дата создания задачи в Jira − фактическое время возникновения инцидента; время решения = фактическое время решения − дата создания задачи. MTTR = median(время реакции + время решения) по инцидентам скользящего окна; если инцидентов в окне не было, MTTR = 0. Инциденты с отрицательным временем реакции или решения учитываются, поэтому MTTR может быть меньше нуля"},
-  {k:"ber",     dim:"quality", inIndex:true,  name:"Bug Escape Rate",      unit:"баг/1000 строк", etalon:0.9119,  min:0.1, max:3,   step:0.01, dir:-1, dp:1,
-   desc:"баги за период, делённые на тысячи добавленных строк кода; числитель и знаменатель напрямую не связаны: баг может прийти из кода, написанного раньше"},
-  {k:"tdr",     dim:"quality", inIndex:false, name:"Technical Debt Ratio", unit:"%",              etalon:42.5163, min:0,   max:100, step:0.1,  dir:0,  dp:0,
-   desc:"доля суммарного delivery time, приходящаяся на технические эпики; направление в индексе не задано"},
+  {k:"cfr", etalon:1.4484, min:0, max:100, step:0.01,      dim:"quality", inIndex:true,  name:"Change Failure Rate",   unit:"%",                 dir:-1, dp:2, scale:"cfr",
+   desc:"(Failed или причинный STOREINC Show-stopper) / состоявшиеся Release и Beta Android × 100%; VKAI исключён"},
+  {k:"ber", etalon:10, min:0, max:100, step:0.01,      dim:"quality", inIndex:true,  name:"Bug Escape Rate",       unit:"%",                 dir:-1, dp:2,
+   desc:"успешные Bug / (Task + Bug) версий обычного RUSTORE Release × 100%; пары версия + задача; не доля production-инцидентов"},
+  {k:"tdv", etalon:20, min:-100, max:100, step:0.1,      dim:"quality", inIndex:false, name:"Technical Debt Velocity", unit:"% от заведённого", dir:-1, dp:1, pp:true,
+   desc:"(заведено − решено) / заведено по техзадачам; изменение на плитке в п.п."},
 
-  {k:"roi",     dim:"impact",  inIndex:true,  name:"ROI",                  unit:"доля",           etalon:-0.4918, min:-1.5,max:1.5, step:0.01, dir:1,  dp:1,
-   desc:"отдача от вложений в техдолг по формуле дашборда: вложения это доля ФОТ, ушедшая на технические эпики, экономия это число продуктовых эпиков, умноженное на удешевление среднего эпика, ROI = (экономия − вложения прошлого квартала) / вложения прошлого квартала. Раскладка по параметрам в панели «ROI: что им на самом деле управляет». Базовое значение отрицательное (−0,4918), поэтому отклонение нормируется на модуль базы"},
-  {k:"fdr",     dim:"impact",  inIndex:false, name:"Feature Delivery Rate",unit:"эпиков/мес",     etalon:83.3333, min:20,  max:160, step:0.5,  dir:1,  dp:0,
-   desc:"закрытые продуктовые (нетехнические) эпики в месяц, без нормировки на размер эпика"},
-  {k:"inno",    dim:"impact",  inIndex:false, name:"Innovation Time",      unit:"%",              etalon:57.4837, min:0,   max:100, step:0.1,  dir:1,  dp:0,
-   desc:"доля времени на продуктовые (нетехнические) эпики; по построению это в точности 100 минус Technical Debt Ratio", twin:"tdr"}
+  {k:"roi", etalon:-49.18, min:-150, max:150, step:0.1,      dim:"impact",  inIndex:true,  name:"ROI",                   unit:"%",                 dir:1,  dp:1,
+   desc:"среднее по кварталам, включая текущий; мощность в эталонных эпиках, RM по дате поставки"},
+  {k:"fdr", etalon:83.3333, min:0, max:200, step:0.1,      dim:"impact",  inIndex:false, name:"Feature Delivery Rate", unit:"эт. эпиков/мес",    dir:1,  dp:1,
+   desc:"поставленные Product-эпики: учитываемые задачи ÷ 7,6158 ÷ число месяцев"},
+  {k:"inno", etalon:57.4837, min:0, max:100, step:0.1,     dim:"impact",  inIndex:false, name:"Innovation Time",       unit:"%",                 dir:1,  dp:1,
+   desc:"доля delivery time продуктовых эпиков во всём delivery time"}
 ];
-
-// английские единицы и описания накладываются на METRICS до построения интерфейса
 const EN_METRICS = {
-  cycle:   {unit:"h", desc:"median across tasks: time from the task entering In Progress to Closed, that is from picking up the work to completion"},
-  deploy:  {unit:"releases/day", desc:"releases of all services over the period, divided by the number of days in the period"},
-  delivery:{unit:"days", desc:"median across epics: time from the epic entering In Technical Design to Rolling out, the whole path from the start of technical design to rollout"},
-  through: {unit:"tasks/person/mo", desc:"tasks closed in a month, divided by the number of unique assignees"},
-  dxiRaw:  {unit:"score out of 10", desc:"average of 14 numeric questions in the developer survey, each on a 1–10 scale; the question list is in the “What DXI is made of” panel"},
-  flow:    {unit:"score", desc:"survey score; the unit on the dashboard is undefined: maybe a share of time, maybe a frequency, maybe a score"},
-  cli:     {unit:"score", desc:"survey score; the question set and scale are not described on the dashboard, and there is no external benchmark"},
-  csr:     {unit:"switches/person/day", desc:"status switches per person per day; a switch is a task moving into an active status, so the value grows with workflow length"},
-  cfr:     {unit:"%", desc:"share of releases resolved as Failed among all releases in the period; the dashboard tile shows the share of successful releases, here the honest inverse is used; on the DORA scale up to 5% is Elite", mirror:"successful releases"},
-  mttr:    {unit:"min", desc:"MTTR (mean time to recovery), total time to resolve an incident. Reaction time = Jira ticket creation date − actual incident start; resolution time = actual resolution time − ticket creation date. MTTR = median(reaction + resolution) over incidents in a sliding window; if there were no incidents in the window, MTTR = 0. Incidents with negative reaction or resolution time are included, so MTTR can drop below zero"},
-  ber:     {unit:"bugs/1000 lines", desc:"bugs over the period divided by thousands of added lines of code; numerator and denominator are not directly linked: a bug can come from code written earlier"},
-  tdr:     {unit:"%", desc:"share of total delivery time spent on technical epics; no direction set in the index"},
-  roi:     {unit:"ratio", desc:"return on tech-debt investment by the dashboard formula: investment is the share of payroll spent on technical epics, saving is the number of product epics times the drop in average epic cost, ROI = (saving − last quarter's investment) / last quarter's investment. The parameter breakdown is in the “ROI: what actually drives it” panel. The base value is negative (−0.4918), so the deviation is normalized by the base's absolute value"},
-  fdr:     {unit:"epics/mo", desc:"product (non-technical) epics closed per month, not normalized by epic size"},
-  inno:    {unit:"%", desc:"share of time on product (non-technical) epics; by construction exactly 100 minus Technical Debt Ratio"}
+  "cycle": {
+    "unit": "h",
+    "desc": "Median hours in active task statuses, from In Progress to successful completion."
+  },
+  "deploy": {
+    "unit": "releases/day",
+    "desc": "Completed Release and Beta Android rollouts divided by calendar days in the window; VKAI excluded. Team membership follows tasks included in each release."
+  },
+  "delivery": {
+    "unit": "days",
+    "desc": "Median days in active epic statuses before accepted delivery; RM delivery uses Rolling Out, Delivered or successful Closed."
+  },
+  "through": {
+    "unit": "tasks/person/mo",
+    "desc": "Successfully completed tasks divided by active person-months, including fractions of incomplete months."
+  },
+  "dxiRaw": {
+    "unit": "score 1–10",
+    "desc": "Mean of 14 survey questions. One company-wide wave; no team-level trend and no index contribution."
+  },
+  "flow": {
+    "unit": "score 0–10",
+    "desc": "Survey answers recoded to a 0–10 score and averaged across respondents; no index contribution."
+  },
+  "cli": {
+    "unit": "score 1–10",
+    "desc": "(Load + context complexity + 11 − load adequacy) / 3; target corridor 4–6, no index contribution."
+  },
+  "csr": {
+    "unit": "switches/person/day",
+    "desc": "Mean transitions between different tasks per person and day."
+  },
+  "cfr": {
+    "unit": "%",
+    "desc": "Releases with Failed resolution or a causal STOREINC Show-stopper divided by completed Release and Beta Android rollouts × 100%; VKAI excluded."
+  },
+  "ber": {
+    "unit": "%",
+    "desc": "Successful Bug / successful (Task + Bug) in regular RUSTORE Release versions × 100%. Count version-task pairs; exclude STOREINC, Beta Android and lines of code."
+  },
+  "tdv": {
+    "unit": "% of created",
+    "desc": "(Created − resolved) / created for technical tasks × 100%; deviations are percentage-point changes."
+  },
+  "roi": {
+    "unit": "%",
+    "desc": "Mean quarterly ROI, including the open quarter. Capacity uses reference epics: eligible tasks / 7.6158. RM uses the delivery date."
+  },
+  "fdr": {
+    "unit": "ref. epics/mo",
+    "desc": "Delivered Product epics measured as eligible tasks / 7.6158 / number of months."
+  },
+  "inno": {
+    "unit": "%",
+    "desc": "Product epic delivery time divided by total epic delivery time × 100%; independent of Technical Debt Velocity."
+  }
 };
 if (EN) for (const m of METRICS) Object.assign(m, EN_METRICS[m.k]);
 
@@ -537,6 +608,11 @@ if (EN){
   for (const d of DIMS) d.name = dn[d.k];
 }
 
+for (const m of METRICS) {
+  Object.assign(m, DX4Model.definitions[m.k]);
+  m.inIndex = m.weight > 0;
+}
+for (const d of DIMS) d.inIndex = d.k !== "effect";
 const M = Object.fromEntries(METRICS.map(m => [m.k, m]));
 for (const d of DIMS){
   d.all  = METRICS.filter(m => m.dim === d.k).map(m => m.k);
@@ -545,33 +621,10 @@ for (const d of DIMS){
 const DIM = Object.fromEntries(DIMS.map(d => [d.k, d]));
 const state = Object.fromEntries(METRICS.map(m => [m.k, m.etalon]));
 
-/* отклонение: dir × (текущее − эталон) / |эталон| × 100
-   Защита стоит только на эталоне. Ноль в самой метрике это законное значение
-   (Change Failure Rate = 0 означает ни одного отказа, то есть +100% к эталону),
-   а не признак отсутствия данных. */
-function dev(k){
-  const m = M[k], x = state[k];
-  if (m.dir === 0) return NaN;          // направление не задано, отклонение не определено
-  if (m.etalon === 0) return NaN;      // нулевая база: относительное отклонение не определено, в плитке н/д
-  return m.dir * (x - m.etalon) / Math.abs(m.etalon) * 100;
-}
-
-function mean(list){
-  const v = list.filter(Number.isFinite);
-  return v.length ? v.reduce((a,b) => a + b, 0) / v.length : NaN;
-}
-
-function compute(){
-  const c = Object.fromEntries(METRICS.map(m => [m.k, dev(m.k)]));
-  const d = {}, alt = {};
-  for (const dim of DIMS){
-    d[dim.k]   = mean(dim.comp.map(k => c[k]));                      // как считает дашборд
-    alt[dim.k] = mean(dim.all.map(k => c[k]));                       // если бы считали все метрики раздела
-  }
-  d.overall   = mean(DIMS.map(x => d[x.k]));
-  alt.overall = mean(DIMS.map(x => alt[x.k]));
-  return {comp:c, dim:d, alt};
-}
+const bases = () => Object.fromEntries(METRICS.map(m => [m.k, m.etalon]));
+const dev = k => DX4Model.deviation(k, state[k], M[k].etalon);
+const mean = DX4Model.strictMean;
+const compute = () => DX4Model.compute(state, bases());
 
 /* ---------- форматирование ---------- */
 // отображение усекается в меньшую сторону (к нулю): хвосты сотых и тысячных не показываем.
@@ -584,6 +637,7 @@ function pct(v, dp){
   const d = dp === undefined ? (Math.abs(v) >= 1000 ? 0 : 1) : dp;
   return (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), d) + "%";
 }
+const fmtDev = (k, v) => M[k].pp ? pct(v).replace("%", EN ? " pp" : " п.п.") : pct(v);
 const cls = v => !Number.isFinite(v) ? "zeroc" : v > 0.05 ? "pos" : v < -0.05 ? "neg" : "zeroc";
 
 /* статус-шкалы: отдельная семантика, не путать с цветом отклонения */
@@ -596,10 +650,9 @@ function statusOf(k){
     return ["bad", S.dxiLow];
   }
   if (k === "cfr"){
-    if (x <= 5)   return ["ok",   S.cfrElite];
-    if (x <= 10)  return ["warn", S.cfrHigh];
-    if (x <= 15)  return ["warn", S.cfrMedium];
-    return ["bad", S.cfrLow];
+    if (x < 2) return ["ok", EN ? "green zone, below 2%" : "зелёная зона, до 2%"];
+    if (x < 5) return ["warn", EN ? "yellow zone, 2–5%" : "жёлтая зона, 2–5%"];
+    return ["bad", EN ? "red zone, 5% or more" : "красная зона, от 5%"];
   }
   return null;
 }
@@ -618,12 +671,12 @@ for (const dim of DIMS){
     const el = document.createElement("div");
     el.className = "metric" + (m.inIndex ? "" : " off");
     el.title = m.desc;
-    const dirText = m.dir === 1 ? S.dirUp : m.dir === -1 ? S.dirDown : S.dirNone;
+    const dirText = m.dir === 1 ? S.dirUp : m.dir === -1 ? S.dirDown : (m.k === "cli" ? (EN ? "target corridor 4–6" : "коридор 4–6") : S.dirNone);
     const badges = [];
     if (!m.inIndex) badges.push(`<span class="pill off tiny">${S.notInIndex}</span>`);
     if (m.oneWave)  badges.push(`<span class="pill off tiny">${S.oneWave}</span>`);
     if (m.flagUnit) badges.push(`<span class="pill off tiny">${S.unitUndef}</span>`);
-    if (m.twin)     badges.push(`<span class="pill off tiny">= 100 − ${M[m.twin].name}</span>`);
+    if (m.pp) badges.push(`<span class="pill off tiny">${EN ? "change in pp" : "изменение в п.п."}</span>`);
     el.innerHTML = `
       <div class="m-top">
         <span class="m-name">${m.name} <span class="m-dir">${dirText}</span></span>
@@ -648,9 +701,7 @@ for (const m of METRICS){
   const inp = document.getElementById("in-" + m.k);
   inp.value = state[m.k];
   inp.addEventListener("input", e => {
-    state[m.k] = parseFloat(e.target.value);
-    if (m.k === "tdr")  syncSlider("inno", 100 - state.tdr);
-    if (m.k === "inno") syncSlider("tdr",  100 - state.inno);
+    state[m.k] = DX4Model.bound(m.k, Number(e.target.value));
     render();
   });
   const p = (m.etalon - m.min) / (m.max - m.min) * 100;
@@ -658,82 +709,57 @@ for (const m of METRICS){
 }
 function syncSlider(k, v){
   state[k] = clamp(M[k], v);
-  document.getElementById("in-" + k).value = state[k];
+  const input = document.getElementById("in-" + k);
+  if (state[k] < M[k].min) M[k].min = state[k];
+  if (state[k] > M[k].max) M[k].max = state[k];
+  input.min = M[k].min; input.max = M[k].max; input.value = state[k];
+  const position = (M[k].etalon - M[k].min) / (M[k].max - M[k].min) * 100;
+  document.getElementById("tick-" + k).style.left = Math.max(0, Math.min(100, position)) + "%";
 }
 
-/* ---------- ROI: разложение формулы дашборда ----------
-   invest    = tech_epics × ФОТ / total_epics
-   saving    = prod_epics × (стоимость_эпика₀ − стоимость_эпика)
-   ROI       = (saving − invest₀) / invest₀
-   После подстановки стоимость_эпика = ФОТ / total_epics и prod_epics = T × (1 − d)
-   абсолютные рубли сокращаются и остаётся:
-   ROI = ((1 − d) × (T/T₀ − r) − d₀) / d₀                                            */
+/* ROI uses the same percentage-valued formula as the reference model. */
 const RPARAMS = [
-  {k:"d0", name:"Доля техдолговых эпиков, прошлый квартал", min:0.02, max:0.60, step:0.01, val:0.24, fmt:"pct"},
-  {k:"d",  name:"Доля техдолговых эпиков, текущий квартал", min:0.00, max:0.90, step:0.01, val:0.24, fmt:"pct"},
-  {k:"x",  name:"Закрытых эпиков, текущий к прошлому",      min:0.50, max:2.00, step:0.000001, val:1.160484, fmt:"mult"},
-  {k:"s",  name:"Средний размер эпика, текущий к прошлому", min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult", guardOnly:true},
-  {k:"r",  name:"ФОТ, текущий к прошлому",                  min:0.50, max:2.00, step:0.01, val:1.00, fmt:"mult"}
+  {k:"d0", name:EN ? "Technical work share, previous quarter" : "Доля техработы, прошлый квартал", min:0, max:1, step:0.001, val:0.24, fmt:"pct"},
+  {k:"d", name:EN ? "Technical work share, current quarter" : "Доля техработы, текущий квартал", min:0, max:1, step:0.001, val:0.24, fmt:"pct"},
+  {k:"x", name:EN ? "Capacity T/T₀ in reference epics" : "Мощность T/T₀ в эталонных эпиках", min:0, max:5, step:0.001, val:1 + .24 * (1 - .4918) / .76, fmt:"mult"},
+  {k:"r", name:EN ? "Payroll / previous payroll" : "ФОТ / ФОТ₀", min:0, max:3, step:0.001, val:1, fmt:"mult"}
 ];
-if (EN){
-  const rn = {
-    d0:"Share of tech-debt epics, previous quarter",
-    d: "Share of tech-debt epics, current quarter",
-    x: "Closed epics, current vs previous",
-    s: "Average epic size, current vs previous",
-    r: "Payroll, current vs previous"
-  };
-  for (const p of RPARAMS) p.name = rn[p.k];
-}
 const RP = Object.fromEntries(RPARAMS.map(p => [p.k, p.val]));
-// защита от нарезки: в формуле объём поставки x × s вместо числа эпиков x.
-// выключена по умолчанию, потому что так считает реальный дашборд
-let GUARD = false;
-const vol = () => RP.x * (GUARD ? RP.s : 1);
-const roiFrom = () => ((1 - RP.d) * (vol() - RP.r) - RP.d0) / RP.d0;
-// обратный ход: какое отношение числа эпиков даёт заданный ROI
-const xForRoi = roi => (RP.r + RP.d0 * (1 + roi) / (1 - RP.d)) / (GUARD ? RP.s : 1);
-
+const roiFrom = () => DX4Model.roiFrom(RP);
+let roiLinked = true;
+function syncRoiParams(){
+  if (Math.abs(roiFrom() - state.roi) < 1e-8) {roiLinked = true; return;}
+  const x = RP.r + RP.d0 * (1 + state.roi / 100) / (1 - RP.d);
+  roiLinked = RP.d0 > 0 && RP.d < 1 && Number.isFinite(x) && x >= 0;
+  if (roiLinked) RP.x = x;
+}
 (function buildR(){
   const el = document.getElementById("rparams");
   for (const p of RPARAMS){
     const d = document.createElement("div");
-    d.className = "rparam" + (p.guardOnly ? " inactive" : "");
-    if (p.guardOnly) d.id = "rp-row-" + p.k;
-    d.innerHTML = `<div class="rp-top"><span class="rp-lab">${p.name}${p.guardOnly ? ` <span class="pill off tiny" id="rp-s-pill">${S.noFormula}</span>` : ""}</span><span class="rp-val num" id="rv-${p.k}"></span></div>
+    d.className = "rparam";
+    d.innerHTML = `<div class="rp-top"><span class="rp-lab">${p.name}</span><span class="rp-val num" id="rv-${p.k}"></span></div>
       <input type="range" id="rin-${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.val}" aria-label="${p.name}">`;
     el.appendChild(d);
     d.querySelector("input").addEventListener("input", e => {
-      RP[p.k] = parseFloat(e.target.value);
-      syncSlider("roi", roiFrom());
-      render();
+      RP[p.k] = Number(e.target.value); roiLinked = true;
+      syncSlider("roi", roiFrom()); render();
     });
   }
 })();
-
-// ROI двусторонний: ползунок метрики пересчитывает отношение числа эпиков
-function syncRoiParams(){
-  // пара уже согласована в пределах шага ползунка: не перетираем ровное значение x
-  // (иначе округлённый state.roi возвращал бы 1,499989 вместо заданных пресетом 1,5)
-  if (Math.abs(roiFrom() - state.roi) < 5e-4) return;
-  RP.x = Math.max(RPARAMS[2].min, Math.min(RPARAMS[2].max, +xForRoi(state.roi).toFixed(6)));
-  const inp = document.getElementById("rin-x");
-  if (inp) inp.value = RP.x;
-}
 document.getElementById("in-roi").addEventListener("input", () => { syncRoiParams(); renderR(); });
-
 function renderR(){
   for (const p of RPARAMS){
     document.getElementById("rv-" + p.k).textContent =
-      p.fmt === "pct" ? ru(RP[p.k] * 100, 0) + "%" : "×" + ru(RP[p.k], 1);
+      p.fmt === "pct" ? ru(RP[p.k] * 100, 1) + "%" : "×" + ru(RP[p.k], 2);
+    const input = document.getElementById("rin-" + p.k);
+    input.max = Math.max(p.max, RP[p.k]); input.value = RP[p.k];
   }
-  // пара согласована в пределах шага ползунка: показываем ровное значение ползунка,
-  // а не хвост пересчёта (иначе при базе 1,5 индикатор усекался бы в 1,4)
-  const raw = roiFrom();
-  const v = Math.abs(raw - state.roi) < 5e-4 ? state.roi : raw;
+  const v = roiLinked ? roiFrom() : NaN;
   const el = document.getElementById("roi-out");
-  el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + ru(Math.abs(v), 1);
-  el.className = "ro-val num " + cls(v);
+  el.textContent = pct(v, 1); el.className = "ro-val num " + cls(v);
+  document.getElementById("ro-lab").textContent = roiLinked ? S.roiPlain :
+    (EN ? "Manual ROI: incompatible with these parameters" : "Ручной ROI: не согласуется с этими параметрами");
 }
 
 /* ---------- профиль DXI: средние по 14 вопросам одной волны опроса ---------- */
@@ -793,12 +819,12 @@ function render(){
 
   for (const [k, id] of [["overall","v-overall"],["speed","v-speed"],["effect","v-effect"],["quality","v-quality"],["impact","v-impact"]]){
     const el = document.getElementById(id);
-    el.textContent = pct(r.dim[k], 1);
+    el.textContent = k === "effect" ? (EN ? "outside index" : "вне индекса") : pct(r.dim[k], 1);
     el.className = "t-val num " + cls(r.dim[k]);
   }
   for (const dim of DIMS){
     document.getElementById("s-" + dim.k).textContent =
-      dim.comp.length === dim.all.length
+      !dim.inIndex ? (EN ? "survey and diagnostics, weight 0" : "опрос и диагностика, вес 0") : dim.comp.length === dim.all.length
         ? `${dim.comp.length} ${plural(dim.comp.length)}`
         : `${dim.comp.length} ${S.of} ${dim.all.length} ${S.metricsMany}`;
   }
@@ -806,7 +832,7 @@ function render(){
   for (const m of METRICS){
     document.getElementById("mv-" + m.k).innerHTML = ru(state[m.k], m.dp) + `<span class="m-unit">${m.unit}</span>`;
     const c = document.getElementById("mc-" + m.k);
-    c.textContent = m.inIndex ? pct(r.comp[m.k]) : (Number.isFinite(r.comp[m.k]) ? pct(r.comp[m.k]) : S.na);
+    c.textContent = m.survey ? (EN ? "no time series" : "динамики нет") : fmtDev(m.k, r.comp[m.k]);
     c.className = "m-contrib num " + (m.inIndex ? cls(r.comp[m.k]) : "zeroc");
     if (m.mirror){
       document.getElementById("mm-" + m.k).innerHTML =
@@ -824,19 +850,11 @@ function render(){
     el.className = "group-dev num " + cls(r.dim[dim.k]);
   }
 
-  const diff = r.alt.overall - r.dim.overall;
-  document.getElementById("alt-line").innerHTML =
-    S.altPrefix +
-    `<span class="num ${cls(r.alt.overall)}">${pct(r.alt.overall, 1)}</span>` + S.altInstead +
-    `<span class="num ${cls(r.dim.overall)}">${pct(r.dim.overall, 1)}</span>` +
-    (Math.abs(diff) >= 0.005
-        ? `${S.altDiffA}<span class="num">${pct(diff, 1)}</span>${S.altDiffB}`
-        // разница может быть нулевой по двум причинам, и путать их нельзя:
-        // серые метрики либо стоят на базе, либо сдвинуты ровно так же, как остальные
-        : METRICS.filter(m => !m.inIndex && m.dir !== 0)
-                 .every(m => Math.abs(state[m.k] - m.etalon) < 1e-9)
-            ? S.altZeroBase
-            : S.altZeroSame);
+  const zeros = METRICS.filter(m => m.inIndex && m.etalon === 0).map(m => m.name);
+  document.getElementById("alt-line").textContent = zeros.length
+    ? (EN ? "Zero reference: deviation is 0 for " : "Нулевая база: отклонение равно 0 для ") + zeros.join(", ")
+    : (EN ? "Seven metrics contribute: speed 1/12 each, quality 1/6 each, ROI 1/3. Survey and diagnostics have weight 0."
+          : "В индексе семь метрик: скорость по 1/12, качество по 1/6, ROI 1/3. Опрос и диагностика имеют вес 0.");
 
   drawChart(r);
   renderR();
@@ -847,7 +865,7 @@ const plural = n => EN ? (n === 1 ? "metric" : "metrics")
 function drawChart(r){
   const rows = [];
   for (const dim of DIMS){
-    rows.push({lab:dim.name, val:r.dim[dim.k], dim:true});
+    rows.push({lab:dim.name, val:r.dim[dim.k], dim:true, off:!dim.inIndex});
     for (const k of dim.all) rows.push({lab:M[k].name, val:r.comp[k], dim:false, key:k, off:!M[k].inIndex});
   }
   const peak = Math.max(12, ...rows.map(x => Math.abs(x.val)).filter(v => Number.isFinite(v) && v < 400));
@@ -864,14 +882,14 @@ function drawChart(r){
       : `<span class="bar ${row.val > 0 ? "p" : "n"}" style="width:${w}%"></span>`;
     d.innerHTML = `<span class="cr-lab">${row.lab}</span>
       <span class="bartrack">${bar}</span>
-      <span class="cr-val num ${cls(row.val)}">${pct(row.val)}</span>`;
+      <span class="cr-val num ${cls(row.val)}">${row.key ? fmtDev(row.key, row.val) : pct(row.val)}</span>`;
     if (row.key) d.title = M[row.key].name + ": " + M[row.key].desc;
     el.appendChild(d);
   });
 }
 
 /* ---------- сценарии ---------- */
-const clamp = (m, v) => Math.max(m.min, Math.min(m.max, +v.toFixed(4)));
+const clamp = (m, v) => DX4Model.bound(m.k, v);
 function shift(f, list){                 // f = доля улучшения, отрицательная значит ухудшение
   for (const m of (list || METRICS)){
     if (m.dir === 0) continue;
@@ -893,32 +911,18 @@ const PRESETS = {
   worse10(){ PRESETS.reset(); shift(-0.1); },
   deploy2x(){ PRESETS.reset(); state.deploy = clamp(M.deploy, M.deploy.etalon * 2); },
   dxielite(){ PRESETS.reset(); state.dxiRaw = 8.5; },
-  roiplus(){ PRESETS.reset(); state.roi = 0.15; },
+  roiplus(){ PRESETS.reset(); state.roi = 15; },
   cfrzero(){ PRESETS.reset(); state.cfr = 0; },
   offonly(){ PRESETS.reset(); shift(0.5, METRICS.filter(m => !m.inIndex)); },
-  // та же работа, нарезанная на большее число задач и эпиков: в реальности не изменилось ничего
+  // More counted tasks raise capacity even if the amount of work is unchanged.
   epicsplit(){
     PRESETS.reset();
-    const px = RPARAMS[2], ps = RPARAMS[3];
-    // множитель задан относительно базы и подобран так, чтобы при заводской
-    // базе x стал ровно 1,5: это значение вшито в кадры на слайдах доклада
-    RP.x = Math.max(px.min, Math.min(px.max, +(px.val * 1.5 / 1.160484).toFixed(6)));
-    // средний размер эпика падает так, что объём поставки x × s остаётся базовым
-    RP.s = Math.max(ps.min, Math.min(ps.max, +(ps.val * px.val / RP.x).toFixed(6)));
-    for (const k of ["x", "s"]){
-      const inp = document.getElementById("rin-" + k);
-      if (inp) inp.value = RP[k];
-    }
-    state.roi = clamp(M.roi, roiFrom());
-    // от дробления работы улучшается не только ROI: число закрытых эпиков за период
-    // и число закрытых задач на человека растут ровно во столько же раз
+    RP.x *= 1.5;
+    state.roi = roiFrom();
     state.fdr = clamp(M.fdr, M.fdr.etalon * 1.5);
     state.through = clamp(M.through, M.through.etalon * 1.5);
   }
 };
-// Technical Debt Ratio и Innovation Time дополняют друг друга до 100 по построению,
-// поэтому после любого сценария тождество восстанавливается явно.
-function normalizeTwins(){ state.tdr = clamp(M.tdr, 100 - state.inno); }
 
 /* «Установить как базовые значения»: текущие позиции ползунков становятся базой,
    от которой считаются отклонения и от которой отталкиваются сценарии.
@@ -931,24 +935,12 @@ function refreshBaseUI(){
   }
 }
 document.getElementById("setbase").addEventListener("click", () => {
-  // пара state.roi / параметры панели ROI согласуется до фиксации, иначе кламп
-  // ползунка ROI запёкся бы в базу противоречием двух цифр одной метрики
+  // Preserve a manual target even when the current drivers cannot reproduce it.
   syncRoiParams();
-  state.roi = clamp(M.roi, roiFrom());
-  document.getElementById("in-roi").value = state.roi;
+  syncSlider("roi", state.roi);
   for (const m of METRICS) m.etalon = state[m.k];
   for (const p of RPARAMS) p.val = RP[p.k];
   refreshBaseUI();
-  render();
-});
-
-document.getElementById("roi-guard").addEventListener("change", e => {
-  GUARD = e.target.checked;
-  document.getElementById("ro-lab").textContent = GUARD ? S.roiGuard : S.roiPlain;
-  document.getElementById("rp-row-s").classList.toggle("inactive", !GUARD);
-  document.getElementById("rp-s-pill").style.display = GUARD ? "none" : "";
-  // формула сменилась: ползунок ROI идёт за новым значением, параметры не трогаем
-  syncSlider("roi", roiFrom());
   render();
 });
 
@@ -964,9 +956,8 @@ syncRoiParams();   // приводим параметры ROI к базе до �
 function applyPreset(name){
   if (!PRESETS[name]) return false;
   PRESETS[name]();
-  normalizeTwins();
   syncRoiParams();
-  for (const m of METRICS) document.getElementById("in-" + m.k).value = state[m.k];
+  for (const m of METRICS) syncSlider(m.k, state[m.k]);
   render();
   return true;
 }

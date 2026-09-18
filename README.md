@@ -4,4 +4,27 @@
 
 Материалы доклада «Как измерить реальный эффект AI в разработке, или иллюзия продуктивности» (Podlodka AI Crew, август 2026).
 
-Страница: <https://michaem.github.io/dx4/>
+Страница: [симулятор DX4](https://michaem.github.io/dx4/).
+
+Формулы синхронизированы с симулятором DXCore4 18.09.2026. Общий индекс включает скорость, качество и ROI. DXI и диагностика имеют вес 0, MTTR исключён. Значения на странице учебные. [Описание всех формул](docs/formulas.md).
+
+## Проверка и сборка
+
+Нужен Node.js 22 или новее. Страница работает без сервера и внешних зависимостей.
+
+```sh
+node scripts/build.mjs
+node --test tests/model.test.cjs
+```
+
+Повторная синхронизация из соседнего checkout DXCore4:
+
+```sh
+node scripts/build.mjs ../DXCore4/docs/dx4-simulator-model.js
+node --test tests/model.test.cjs
+node scripts/check-reference.cjs ../DXCore4/docs/dx4-simulator-model.js ../DXCore4/reports/dx4-simulator-snapshot.json
+```
+
+Команда переносит только модуль формул. Срезы и значения команд остаются в исходном проекте. При изменении состава метрик или единиц обновите описания и учебные примеры в обеих локализациях.
+
+Для проверки интерфейса установите Playwright и Chromium в среде разработки, затем выполните `node tests/browser.cjs`. Для установленного Chrome можно задать `PLAYWRIGHT_CHANNEL=chrome`.
